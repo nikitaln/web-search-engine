@@ -6,21 +6,25 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Site")
 public class Site {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private StatusType status;
 
-    @Column(name = "status_time")
+    @Column(name = "status_time", columnDefinition = "DATETIME NOT NULL")
     private LocalDateTime time;
-    @Column(name = "last_error")
+
+    @Column(name = "last_error", columnDefinition = "TEXT")
     private String text;
+
+    @Column(name = "url", columnDefinition = "VARCHAR(255) NOT NULL")
     private String url;
-    @Column(name = "name")
+
+    @Column(name = "name", columnDefinition = "VARCHAR(255) NOT NULL")
     private String nameSite;
 
     public int getId() {

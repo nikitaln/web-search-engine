@@ -11,11 +11,14 @@ public class Page {
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "site_id", nullable = false)
     private Site site;
+
+    @Column(name = "path", columnDefinition = "TEXT NOT NULL")
     private String path;
 
-    @Column(name = "code")
+    @Column(name = "code", columnDefinition = "INT NOT NULL")
     private int codeHTTP;
 
+    @Column(name = "content", columnDefinition = "MEDIUMTEXT NOT NULL")
     private String content;
 
     public int getId() {
