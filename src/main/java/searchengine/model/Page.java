@@ -3,6 +3,7 @@ package searchengine.model;
 import javax.persistence.*;
 
 @Entity
+@Table(name = "Page")
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
