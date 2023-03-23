@@ -11,7 +11,7 @@ public class Site {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = true)
     @Enumerated(EnumType.STRING)
     private StatusType status;
 
@@ -35,13 +35,13 @@ public class Site {
         this.id = id;
     }
 
-//    public StatusType getStatus() {
-//        return status;
-//    }
-//
-//    public void setStatus(StatusType status) {
-//        this.status = status;
-//    }
+    public StatusType getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusType status) {
+        this.status = status;
+    }
 
     public LocalDateTime getTime() {
         return time;
