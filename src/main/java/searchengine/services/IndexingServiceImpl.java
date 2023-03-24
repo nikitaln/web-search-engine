@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.dto.indexing.IndexingData;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.StatusType;
 import searchengine.repositories.SiteRepository;
@@ -26,15 +25,11 @@ public class IndexingServiceImpl implements IndexingService {
 
         for (int i=0; i < sitesList.size(); i++) {
             Site site = sitesList.get(i);
-            IndexingData data = new IndexingData();
-            data.setName(site.getName());
-            data.setUrl(site.getUrl());
 
             searchengine.model.Site s1 = new searchengine.model.Site();
 
-
-            s1.setNameSite(data.getName());
-            s1.setUrl(data.getUrl());
+            s1.setNameSite(site.getName());
+            s1.setUrl(site.getUrl());
             s1.setTime(LocalDateTime.now());
             s1.setText("Ошибка");
             s1.setStatus(StatusType.INDEXING);
