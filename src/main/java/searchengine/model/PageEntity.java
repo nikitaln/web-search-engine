@@ -4,14 +4,14 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "Page")
-public class Page {
+public class PageEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "site_id", nullable = false)
-    private Site site;
+    private SiteEntity siteEntity;
 
     @Column(name = "path", columnDefinition = "TEXT NOT NULL")
     private String path;
@@ -19,7 +19,7 @@ public class Page {
     @Column(name = "code", columnDefinition = "INT NOT NULL")
     private int codeHTTP;
 
-    @Column(name = "content", columnDefinition = "MEDIUMTEXT NOT NULL")
+    @Column(name = "content", columnDefinition = "LONGTEXT NOT NULL")
     private String content;
 
     public int getId() {
@@ -30,12 +30,12 @@ public class Page {
         this.id = id;
     }
 
-    public Site getSite() {
-        return site;
+    public SiteEntity getSite() {
+        return siteEntity;
     }
 
-    public void setSite(Site site) {
-        this.site = site;
+    public void setSite(SiteEntity siteEntity) {
+        this.siteEntity = siteEntity;
     }
 
     public String getPath() {
