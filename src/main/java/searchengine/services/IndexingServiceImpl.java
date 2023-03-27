@@ -6,6 +6,7 @@ import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
@@ -52,19 +53,19 @@ public class IndexingServiceImpl implements IndexingService {
             siteRepository.save(siteEntity);
 
             //запуск обхода всех ссылок сайта
-            RecursiveIndexingTask rit = new RecursiveIndexingTask(site.getUrl(), pageRepository, siteEntity);
-            ForkJoinPool fjp = new ForkJoinPool();
-            fjp.invoke(rit);
+//            RecursiveIndexingTask rit = new RecursiveIndexingTask(site.getUrl(), pageRepository, siteEntity);
+//            ForkJoinPool fjp = new ForkJoinPool();
+//            fjp.invoke(rit);
+
+
+
+
         }
-        IndexingResponse response = new IndexingResponse();
 
         if (sitesList.size() == 4) {
-            response.setResult(true);
-            return response;
+            return new IndexingResponse();
         } else {
-            response.setResult(false);
-            response.setError("Индексация уже запущена");
-            return response;
+            return new IndexingErrorResponse("ОШИБКА");
         }
     }
 
