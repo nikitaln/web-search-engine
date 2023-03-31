@@ -1,97 +1,115 @@
 package searchengine.services;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.repositories.PageRepository;
+import searchengine.repositories.SiteRepository;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.RecursiveAction;
 
 public class RecursiveIndexingTask extends RecursiveAction {
 
-    private String link;
-    private PageRepository pageRepository;
     private SiteEntity siteEntity;
+    private String link;
+    private SiteRepository siteRepository;
+    private PageRepository pageRepository;
 
-    public RecursiveIndexingTask(String link, PageRepository pageRepository, SiteEntity siteEntity) {
-        this.link = link;
-        this.pageRepository = pageRepository;
+    public RecursiveIndexingTask(SiteEntity siteEntity, String link, SiteRepository siteRepository, PageRepository pageRepository) {
         this.siteEntity = siteEntity;
-    }
-
-    public RecursiveIndexingTask(String link) {
         this.link = link;
+        this.siteRepository = siteRepository;
+        this.pageRepository = pageRepository;
     }
 
     @Override
     protected void compute() {
 
-        ArrayList<RecursiveIndexingTask> listTasks = new ArrayList<>();
+        ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
 
         try {
-            Thread.sleep(150);
-            Document doc = Jsoup.connect(link).get();
+            Connection.Response response = Jsoup.connect(link).execute();
+            Document doc = response.parse();
             Elements elements = doc.select("a");
             elements.forEach(element -> {
+                String newLink = element.absUrl("href");
 
-                String path = element.absUrl("href");
+                if (isDomainUrl(newLink)) {
 
-                if (path.startsWith("https://lenta.ru/") &&
-                        !path.contains("#")
-                        && !path.contains("?")
-                        && !path.contains("%")
-                        && !path.contains(".pdf")
-                        && !path.contains(".jpg")
-                        && !path.contains(".doc")
-                        && !path.contains(".docx")
-                        && !path.contains(".jpeg")) {
+                    synchronized (pageRepository) {
+                        if (!containsInDataBase(newLink)) {
 
-                    try {
-                        Document doc2 = Jsoup.connect(path).get();
-                        String html = checkHtmlCode(doc2.html());
-                        PageEntity page = new PageEntity();
-                        page.setSite(siteEntity);
-                        page.setPath(path);
-                        page.setCodeHTTP(200);
-                        page.setContent(html);
+                            savePage(newLink);
 
-
-                        RecursiveIndexingTask task = new RecursiveIndexingTask(path);
-                        task.fork();
-                        listTasks.add(task);
-                        System.out.println(Thread.currentThread().getName());
-                        pageRepository.save(page);
-
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                            System.out.println(newLink + " " + Thread.currentThread().getName());
+                            RecursiveIndexingTask task = new RecursiveIndexingTask(
+                                    siteEntity,
+                                    newLink,
+                                    siteRepository,
+                                    pageRepository);
+                            task.fork();
+                            allTasks.add(task);
+                        }
                     }
                 }
             });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        for (RecursiveIndexingTask task : allTasks) {
+            task.join();
+        }
+    }
+    public boolean containsInDataBase(String link) {
+        if (link.equals(pageRepository.contains(link))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isDomainUrl(String link) {
+        if (link.startsWith(siteEntity.getUrl())
+                && !link.contains("#")
+                && !link.contains("jpg")
+                && !link.contains("jpeg")
+                && !link.contains("doc")
+                && !link.contains("docx")
+                && !link.contains("*")
+                && !link.contains("pdf")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void savePage(String link) {
+
+        try {
+            Document doc2 = Jsoup.connect(link).get();
+
+            PageEntity pageEntity = new PageEntity();
+            pageEntity.setSite(siteEntity);
+            pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
+            pageEntity.setContent(doc2.outerHtml());
+            pageEntity.setPath(link);
+
+            pageRepository.save(pageEntity);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
-        for (RecursiveIndexingTask task : listTasks) {
-            task.join();
-        }
-
     }
 
-    public String checkHtmlCode(String htmlCode) {
-
-        String regex = "[^\\p{L}\\p{M}\\p{N}\\p{P}\\p{Z}\\p{Cf}\\p{Cs}\\s\\p{Punct}]";
-        String codeHtlmBeforeCheck = htmlCode.replaceAll(regex,"");
-
-        return codeHtlmBeforeCheck;
-    }
-
-    public void containsDb() {
-
-    }
+//      парсинг HTML кода от эмоджи и тд
+//    public String checkHtmlCode(String htmlCode) {
+//
+//        String regex = "[^\\p{L}\\p{M}\\p{N}\\p{P}\\p{Z}\\p{Cf}\\p{Cs}\\s\\p{Punct}]";
+//        String codeHtlmBeforeCheck = htmlCode.replaceAll(regex, "");
+//        return codeHtlmBeforeCheck;
+//    }
 }

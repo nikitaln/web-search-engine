@@ -27,10 +27,11 @@ public class IndexingServiceImpl implements IndexingService {
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
 
-
     //метод запуска индексации сайта
     @Override
     public IndexingResponse startIndexing() {
+
+        long start = System.currentTimeMillis();
 
         //создание списка сайтов из application.yml
         List<Site> sitesList = sites.getSites();
@@ -46,20 +47,33 @@ public class IndexingServiceImpl implements IndexingService {
             siteEntity.setNameSite(site.getName());
             siteEntity.setUrl(site.getUrl());
             siteEntity.setTime(LocalDateTime.now());
-            siteEntity.setText("Ошибка");
+            siteEntity.setText(null);
             siteEntity.setStatus(StatusType.INDEXING);
 
             //записали сущность в БД
             siteRepository.save(siteEntity);
 
-            //запуск обхода всех ссылок сайта
-//            RecursiveIndexingTask rit = new RecursiveIndexingTask(site.getUrl(), pageRepository, siteEntity);
-//            ForkJoinPool fjp = new ForkJoinPool();
-//            fjp.invoke(rit);
+            RecursiveIndexingTask recursiveIndexingTask = new RecursiveIndexingTask(siteEntity, siteEntity.getUrl(), siteRepository, pageRepository);
+            ForkJoinPool fjp = new ForkJoinPool();
+            fjp.invoke(recursiveIndexingTask);
+
+
+            siteEntity.setStatus(StatusType.INDEXED);
+            siteRepository.save(siteEntity);
 
 
 
+            long finish = System.currentTimeMillis() - start;
+            System.out.println("Time process - " + finish + " ms");
 
+            String n1 = site.getUrl();
+            String n2 = siteRepository.contains(n1);
+
+            if (n1.equals(n2)) {
+                System.out.println("Совпадение найдено");
+            } else {
+                System.out.println("Нет совпадений");
+            }
         }
 
         if (sitesList.size() == 4) {
@@ -73,4 +87,12 @@ public class IndexingServiceImpl implements IndexingService {
     public IndexingResponse stopIndexing() {
         return null;
     }
+
+    private void createSiteMap(String link, SiteEntity siteEntity) {
+
+       new ForkJoinPool().invoke(new RecursiveIndexingTask(siteEntity, siteEntity.getUrl(), siteRepository, pageRepository));
+//        new ForkJoinPool().execute(new RecursiveIndexingTask(link, pageRepository, siteEntity));
+    }
+
+
 }
