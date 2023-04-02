@@ -7,14 +7,13 @@ import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.sitemap.RecursiveIndexingTask;
+import searchengine.services.sitemap.SiteMapThread;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 @Service
@@ -23,8 +22,8 @@ public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
-    private SiteIndexing siteIndexing;
-    private ArrayList<Thread> threads = new ArrayList<>();
+    private ArrayList<SiteMapThread> threads = new ArrayList<>();
+    private SiteMapThread siteMapThread;
 
     //метод запуска индексации сайта
     @Override
@@ -33,14 +32,21 @@ public class IndexingServiceImpl implements IndexingService {
         //создание списка сайтов из application.yml
         List<Site> sitesList = sites.getSites();
 
+        System.out.println("Кол-во сайтов - " + sitesList.size());
+
         for (int i=0; i < sitesList.size(); i++) {
+
             int num = i;
-            //создаем первый поток для сайта из списка
+
             //создали объект site с полями name и url
             Site site = sitesList.get(num);
-            threads.add(new SiteIndexing(site, pageRepository, siteRepository));
-            threads.get(i).start();
+            threads.add(new SiteMapThread(site, pageRepository, siteRepository));
         }
+
+        for (SiteMapThread thread : threads) {
+            thread.start();
+        }
+
         if (sitesList.size() == 4) {
             return new IndexingResponse();
         } else {
@@ -53,9 +59,10 @@ public class IndexingServiceImpl implements IndexingService {
 
         System.out.println("Зашли в метод стоп-индексинг");
 
-        for (Thread thread : threads) {
+        for (SiteMapThread thread : threads) {
             thread.interrupt();
         }
+
 
         return new IndexingErrorResponse("Остановка индексации сайта");
     }

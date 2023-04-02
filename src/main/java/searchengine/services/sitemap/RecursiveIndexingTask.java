@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.sitemap;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
