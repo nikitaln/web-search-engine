@@ -14,7 +14,6 @@ public class SiteMapThread extends Thread {
     private Site site;
     private PageRepository pageRepository;
     private SiteRepository siteRepository;
-
     private ForkJoinPool fjp;
 
     public SiteMapThread(Site site, PageRepository pageRepository, SiteRepository siteRepository) {
@@ -25,10 +24,8 @@ public class SiteMapThread extends Thread {
 
     @Override
     public void run() {
+
         //создали сущность site для вставки в БД
-
-
-
         SiteEntity siteEntity = new SiteEntity();
 
         siteEntity.setNameSite(site.getName());
@@ -52,8 +49,8 @@ public class SiteMapThread extends Thread {
         System.out.println("ForkJoin запущен");
     }
 
-    public void stopForkJoin() {
+    public void stopThread() {
         fjp.shutdown();
-        System.out.println("Завершили форк");
+        System.out.println(fjp.isShutdown());
     }
 }
