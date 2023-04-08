@@ -1,13 +1,29 @@
 package searchengine.services.morphology;
 
 
+import org.apache.lucene.morphology.LuceneMorphology;
+import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MorphologyApp {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
-        String text = "повторное появление леопарда в осетии позволяет предположить";
+        LuceneMorphology luceneMorph = new RussianLuceneMorphology();
 
-        MorphologyService morphologyService = new MorphologyService();
-        morphologyService.getLemma(text);
+        String text = "Повторное появление леопарда в Осетии позволяет предположить, что и леопард постоянно обитает в некоторых районах Северного Кавказа.";
+        MorphologyService morphologyService = new MorphologyService(luceneMorph);
+
+        Map<String, Integer> map = new HashMap<>();
+
+        map = morphologyService.getLemmaMapWithoutParticles(text);
+
+        for (String key : map.keySet()) {
+            System.out.println(key + " " + map.get(key));
+        }
+
     }
 }
