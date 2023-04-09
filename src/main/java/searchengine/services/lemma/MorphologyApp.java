@@ -15,11 +15,12 @@ public class MorphologyApp {
         LuceneMorphology luceneMorph = new RussianLuceneMorphology();
 
         String text = "Повторное появление леопарда в Осетии позволяет предположить, что и леопард постоянно обитает в некоторых районах Северного Кавказа.";
-        MorphologyService morphologyService = new MorphologyService(luceneMorph);
 
+
+        LemmaFinder lemmaFinder = new LemmaFinder(luceneMorph);
         Map<String, Integer> map = new HashMap<>();
 
-        map = morphologyService.getLemmaMapWithoutParticles(text);
+        map = lemmaFinder.getLemmaMapWithoutParticles(text);
 
         for (String key : map.keySet()) {
             System.out.println(key + " " + map.get(key));
