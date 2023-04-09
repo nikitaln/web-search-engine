@@ -1,4 +1,4 @@
-package searchengine.services.morphology;
+package searchengine.services.lemma;
 
 import org.apache.lucene.morphology.LuceneMorphology;
 
@@ -12,6 +12,9 @@ public class LemmaFinder {
     public LemmaFinder(LuceneMorphology luceneMorphology) {
         this.luceneMorphology = luceneMorphology;
     }
+
+
+
 
     //Основной метод начало получения леммы слов из текста
     public Map<String, Integer> getLemmaMapWithParticles(String text) {

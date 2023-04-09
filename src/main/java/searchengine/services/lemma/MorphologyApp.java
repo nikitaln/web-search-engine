@@ -1,4 +1,4 @@
-package searchengine.services.morphology;
+package searchengine.services.lemma;
 
 
 import org.apache.lucene.morphology.LuceneMorphology;

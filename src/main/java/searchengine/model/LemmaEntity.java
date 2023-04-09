@@ -39,4 +39,12 @@ public class LemmaEntity {
     public void setFrequency(int frequency) {
         this.frequency = frequency;
     }
+
+    public SiteEntity getSiteEntity() {
+        return siteEntity;
+    }
+
+    public void setSiteEntity(SiteEntity siteEntity) {
+        this.siteEntity = siteEntity;
+    }
 }

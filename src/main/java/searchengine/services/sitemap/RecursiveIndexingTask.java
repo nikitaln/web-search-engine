@@ -1,15 +1,24 @@
 package searchengine.services.sitemap;
 
+import org.apache.lucene.morphology.LuceneMorphology;
+import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
+import searchengine.repositories.IndexRepository;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.lemma.LemmaFinder;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.RecursiveAction;
 
 public class RecursiveIndexingTask extends RecursiveAction {
@@ -19,7 +28,14 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
 
-    public RecursiveIndexingTask(SiteEntity siteEntity, String link, SiteRepository siteRepository, PageRepository pageRepository) {
+    private LemmaRepository lemmaRepository;
+    private IndexRepository indexRepository;
+
+    public RecursiveIndexingTask(SiteEntity siteEntity,
+                                 String link,
+                                 SiteRepository siteRepository,
+                                 PageRepository pageRepository) {
+
         this.siteEntity = siteEntity;
         this.link = link;
         this.siteRepository = siteRepository;
@@ -44,8 +60,9 @@ public class RecursiveIndexingTask extends RecursiveAction {
                         if (!containsInDataBase(newLink)) {
 
                             savePage(newLink);
-
                             System.out.println(newLink + " " + Thread.currentThread().getName());
+
+
                             RecursiveIndexingTask task = new RecursiveIndexingTask(
                                     siteEntity,
                                     newLink,
@@ -93,16 +110,50 @@ public class RecursiveIndexingTask extends RecursiveAction {
             Document doc2 = Jsoup.connect(link).get();
 
             PageEntity pageEntity = new PageEntity();
+
             pageEntity.setSite(siteEntity);
             pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
             pageEntity.setContent(doc2.outerHtml());
             pageEntity.setPath(link);
-
             pageRepository.save(pageEntity);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void saveLemma(String htmlContent, SiteEntity siteEntity) {
+        //необходимость сохранить лемму
+        try {
+            LuceneMorphology luceneMorphology = new RussianLuceneMorphology();
+            LemmaFinder lemmaFinder = new LemmaFinder(luceneMorphology);
+            String onlyText = lemmaFinder.deleteHtmlTags(htmlContent);
+
+            Map<String, Integer> map = new HashMap<>();
+
+            map = lemmaFinder.getLemmaMapWithoutParticles(onlyText);
+
+
+
+            for (String key : map.keySet()) {
+                String lemma = key;
+                int countLemma = map.get(key);
+
+                LemmaEntity lemmaEntity = new LemmaEntity();
+                lemmaEntity.setLemma(lemma);
+                lemmaEntity.setFrequency(1);
+                lemmaEntity.setSiteEntity(siteEntity);
+                lemmaRepository.save(lemmaEntity);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void saveIndex() {
+
+
     }
 
 //      парсинг HTML кода от эмоджи и тд
