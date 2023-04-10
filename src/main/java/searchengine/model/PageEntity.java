@@ -6,7 +6,7 @@ import javax.persistence.*;
 @Table(name = "Page")
 public class PageEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)

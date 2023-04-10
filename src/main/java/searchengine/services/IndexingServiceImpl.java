@@ -1,17 +1,21 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.model.SiteEntity;
+import searchengine.model.StatusType;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.sitemap.SiteMapThread;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -79,9 +83,33 @@ public class IndexingServiceImpl implements IndexingService {
             //данный сайт есть в таблице
             System.out.println("сайт в БД");
             return new IndexingResponse();
+
         } else if (siteInConfig(siteUrl)) {
+
             //сайта нет в таблице и проверяем из конфигурации
             System.out.println("сайт в конфиг");
+
+            List<Site> sitesList = sites.getSites();
+
+            for (int i=0; i < sitesList.size(); i++) {
+
+                //создали объект site с полями name и url
+                Site site = sitesList.get(i);
+
+                if (siteUrl.equals(site.getUrl())) {
+
+                    SiteBuilder siteBuilder = new SiteBuilder(site, siteRepository, url, pageRepository);
+                    siteBuilder.siteSaveToDB();
+
+                    siteBuilder.lemmaSaveToDB(url);
+
+
+
+                    break;
+                };
+            }
+
+            System.out.printf("Сайт в БД");
 
             //создать сущность Сайт и добавить в БД
             //создать сущность Страница и добавить в БД
