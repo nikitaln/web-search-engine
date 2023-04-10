@@ -5,9 +5,11 @@ import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.config.Site;
+import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
@@ -24,12 +26,14 @@ public class SiteBuilder {
     private SiteRepository siteRepository;
     private String url;
     private PageRepository pageRepository;
+    private LemmaRepository lemmaRepository;
 
-    public SiteBuilder(Site site, SiteRepository siteRepository, String url, PageRepository pageRepository) {
+    public SiteBuilder(Site site, SiteRepository siteRepository, String url, PageRepository pageRepository, LemmaRepository lemmaRepository) {
         this.site = site;
         this.siteRepository = siteRepository;
         this.url = url;
         this.pageRepository = pageRepository;
+        this.lemmaRepository = lemmaRepository;
     }
 
     public void siteSaveToDB() {
@@ -63,12 +67,14 @@ public class SiteBuilder {
 
             pageRepository.save(pageEntity);
 
+            lemmaSaveToDB(url, siteEntity);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void lemmaSaveToDB(String url) {
+    public void lemmaSaveToDB(String url, SiteEntity siteEntity) {
 
         try {
             Document doc2 = Jsoup.connect(url).get();
@@ -79,18 +85,24 @@ public class SiteBuilder {
             LemmaFinder lemmaFinder = new LemmaFinder(luceneMorph);
             Map<String, Integer> map = new HashMap<>();
 
-
-
             map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(htmlCode));
 
             for (String key : map.keySet()) {
+
+                LemmaEntity lemma = new LemmaEntity();
+                lemma.setLemma(key);
+                lemma.setFrequency(1);
+                lemma.setSiteEntity(siteEntity);
+
+                lemmaRepository.save(lemma);
+
+
                 System.out.println(key + " " + map.get(key));
             }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
 
     }
 

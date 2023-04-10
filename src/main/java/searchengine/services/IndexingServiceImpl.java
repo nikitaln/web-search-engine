@@ -98,10 +98,8 @@ public class IndexingServiceImpl implements IndexingService {
 
                 if (siteUrl.equals(site.getUrl())) {
 
-                    SiteBuilder siteBuilder = new SiteBuilder(site, siteRepository, url, pageRepository);
+                    SiteBuilder siteBuilder = new SiteBuilder(site, siteRepository, url, pageRepository, lemmaRepository);
                     siteBuilder.siteSaveToDB();
-
-                    siteBuilder.lemmaSaveToDB(url);
 
 
 
