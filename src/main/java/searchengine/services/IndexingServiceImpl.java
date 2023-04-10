@@ -1,12 +1,15 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
 import searchengine.repositories.IndexRepository;
@@ -15,9 +18,11 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.sitemap.SiteMapThread;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 @Service
@@ -74,19 +79,44 @@ public class IndexingServiceImpl implements IndexingService {
     public IndexingResponse indexPage(String url) {
 
         //получить из ссылки название сайта
-
         String siteUrl = getSiteUrl(url);
-        System.out.println(siteUrl);
 
         //проверить наличие в БД
         if (siteUrl.equals(siteRepository.contains(siteUrl))) {
             //данный сайт есть в таблице
+            siteRepository.getId(siteUrl);
+            System.out.println(siteRepository.getId(siteUrl));
+            Optional<SiteEntity> s = siteRepository.findById(1);
+            System.out.println(s.get().getNameSite());
+            SiteEntity site = s.get();
+
+            try {
+                Document doc2 = Jsoup.connect(url).get();
+
+                PageEntity pageEntity = new PageEntity();
+
+                pageEntity.setSite(site);
+                pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
+                pageEntity.setContent(doc2.outerHtml());
+                pageEntity.setPath(url);
+
+                pageRepository.save(pageEntity);
+
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+
+
+///==========РАБОТА НАД ДАННЫМ КОДОМ
+
             System.out.println("сайт в БД");
             return new IndexingResponse();
 
         } else if (siteInConfig(siteUrl)) {
 
-            //сайта нет в таблице и проверяем из конфигурации
+            //сайта нет в таблице, есть в конфиге
             System.out.println("сайт в конфиг");
 
             List<Site> sitesList = sites.getSites();
@@ -98,10 +128,8 @@ public class IndexingServiceImpl implements IndexingService {
 
                 if (siteUrl.equals(site.getUrl())) {
 
-                    SiteBuilder siteBuilder = new SiteBuilder(site, siteRepository, url, pageRepository, lemmaRepository);
+                    SiteBuilder siteBuilder = new SiteBuilder(site, siteRepository, url, pageRepository, lemmaRepository, indexRepository);
                     siteBuilder.siteSaveToDB();
-
-
 
                     break;
                 };
@@ -123,33 +151,6 @@ public class IndexingServiceImpl implements IndexingService {
                     "указанных в конфигурационном файле\n");
         }
     }
-
-//
-//
-//        try {
-//            Document doc = Jsoup.connect(url).get();
-//            String html = doc.html();
-//
-//            PageEntity pageEntity = new PageEntity();
-//            pageEntity.setPath(url);
-//            pageEntity.setContent(html);
-//
-//            LemmaConfiguration lemmaConfiguration = new LemmaConfiguration();
-//
-//            LemmaFinder lemmaFinder = new LemmaFinder(lemmaConfiguration.luceneMorphology());
-//
-//
-//            Map<String, Integer> map = new HashMap<>();
-//
-//            map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(html));
-//
-//            for (String key : map.keySet()) {
-//                System.out.println(key + " " + map.get(key));
-//            }
-//
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
 
     //получение главной страницы сайта из ссылки
     private String getSiteUrl(String url) {

@@ -5,7 +5,7 @@ import javax.persistence.*;
 @Table(name = "`lemma`")
 public class LemmaEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)

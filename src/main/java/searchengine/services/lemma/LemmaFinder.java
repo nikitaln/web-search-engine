@@ -13,9 +13,6 @@ public class LemmaFinder {
         this.luceneMorphology = luceneMorphology;
     }
 
-
-
-
     //Основной метод начало получения леммы слов из текста
     public Map<String, Integer> getLemmaMapWithParticles(String text) {
 

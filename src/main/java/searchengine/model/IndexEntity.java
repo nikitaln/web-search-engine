@@ -6,7 +6,7 @@ import javax.persistence.*;
 @Table(name = "`index`")
 public class IndexEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -26,6 +26,22 @@ public class IndexEntity {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public PageEntity getPageEntity() {
+        return pageEntity;
+    }
+
+    public void setPageEntity(PageEntity pageEntity) {
+        this.pageEntity = pageEntity;
+    }
+
+    public LemmaEntity getLemmaEntity() {
+        return lemmaEntity;
+    }
+
+    public void setLemmaEntity(LemmaEntity lemmaEntity) {
+        this.lemmaEntity = lemmaEntity;
     }
 
     public float getRank() {

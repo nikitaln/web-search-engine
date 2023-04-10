@@ -5,10 +5,8 @@ import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.config.Site;
-import searchengine.model.LemmaEntity;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
+import searchengine.model.*;
+import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
@@ -27,13 +25,15 @@ public class SiteBuilder {
     private String url;
     private PageRepository pageRepository;
     private LemmaRepository lemmaRepository;
+    private IndexRepository indexRepository;
 
-    public SiteBuilder(Site site, SiteRepository siteRepository, String url, PageRepository pageRepository, LemmaRepository lemmaRepository) {
+    public SiteBuilder(Site site, SiteRepository siteRepository, String url, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.site = site;
         this.siteRepository = siteRepository;
         this.url = url;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
+        this.indexRepository = indexRepository;
     }
 
     public void siteSaveToDB() {
@@ -67,14 +67,14 @@ public class SiteBuilder {
 
             pageRepository.save(pageEntity);
 
-            lemmaSaveToDB(url, siteEntity);
+            lemmaSaveToDB(url, siteEntity, pageEntity);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void lemmaSaveToDB(String url, SiteEntity siteEntity) {
+    public void lemmaSaveToDB(String url, SiteEntity siteEntity, PageEntity pageEntity) {
 
         try {
             Document doc2 = Jsoup.connect(url).get();
@@ -96,13 +96,27 @@ public class SiteBuilder {
 
                 lemmaRepository.save(lemma);
 
-
                 System.out.println(key + " " + map.get(key));
+                saveIndex(lemma, indexRepository, pageEntity, map.get(key));
+
             }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+    }
+
+    public void saveIndex(LemmaEntity lemmaEntity, IndexRepository indexRepository, PageEntity pageEntity, float rank) {
+
+        System.out.println("зашли в метод saveIndex");
+
+        IndexEntity indexEntity = new IndexEntity();
+        indexEntity.setLemmaEntity(lemmaEntity);
+        indexEntity.setRank(rank);
+        indexEntity.setPageEntity(pageEntity);
+
+        indexRepository.save(indexEntity);
 
     }
 
