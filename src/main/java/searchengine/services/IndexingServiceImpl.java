@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -78,24 +80,27 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse indexPage(String url) {
 
+        //выбрать из строки только адрес сайта
+        //проверить есть ли он в БД если нет то создать новую запись сайта
+
         //получить из ссылки название сайта
         String siteUrl = getSiteUrl(url);
 
         //проверить наличие в БД
         if (siteUrl.equals(siteRepository.contains(siteUrl))) {
             //данный сайт есть в таблице
-            siteRepository.getId(siteUrl);
-            System.out.println(siteRepository.getId(siteUrl));
-            Optional<SiteEntity> s = siteRepository.findById(1);
-            System.out.println(s.get().getNameSite());
-            SiteEntity site = s.get();
+           int id = siteRepository.getId(siteUrl);
+            Optional<SiteEntity> site = siteRepository.findById(id);
+
+            SiteEntity siteEntity = site.get();
 
             try {
+
                 Document doc2 = Jsoup.connect(url).get();
 
                 PageEntity pageEntity = new PageEntity();
 
-                pageEntity.setSite(site);
+                pageEntity.setSite(siteEntity);
                 pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
                 pageEntity.setContent(doc2.outerHtml());
                 pageEntity.setPath(url);
