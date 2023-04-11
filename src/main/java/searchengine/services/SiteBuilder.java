@@ -49,8 +49,6 @@ public class SiteBuilder {
         siteRepository.save(siteEntity);
 
         pageSaveToDB(url, siteEntity);
-
-
     }
 
     private void pageSaveToDB(String url, SiteEntity siteEntity) {
@@ -119,5 +117,4 @@ public class SiteBuilder {
         indexRepository.save(indexEntity);
 
     }
-
 }

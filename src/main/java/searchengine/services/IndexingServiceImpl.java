@@ -17,6 +17,7 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.sitemap.SiteMapThread;
+import searchengine.utils.EditorURL;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -80,19 +81,15 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse indexPage(String url) {
 
-        //выбрать из строки только адрес сайта
-        //проверить есть ли он в БД если нет то создать новую запись сайта
+        EditorURL editorURL = new EditorURL(url);
 
-        //получить из ссылки название сайта
-        String siteUrl = getSiteUrl(url);
+        String siteUrl = editorURL.getSiteURL();
 
         //проверить наличие в БД
         if (siteUrl.equals(siteRepository.contains(siteUrl))) {
-            //данный сайт есть в таблице
-           int id = siteRepository.getId(siteUrl);
-            Optional<SiteEntity> site = siteRepository.findById(id);
+            Optional<SiteEntity> site = siteRepository.findById(siteRepository.getId(siteUrl));
 
-            SiteEntity siteEntity = site.get();
+           SiteEntity siteEntity = site.get();
 
             try {
 
@@ -140,40 +137,17 @@ public class IndexingServiceImpl implements IndexingService {
                 };
             }
 
-            System.out.printf("Сайт в БД");
-
             //создать сущность Сайт и добавить в БД
             //создать сущность Страница и добавить в БД
             //взять HTML-код и удалить все Теги, затем Найти все Леммы
             //создать сущность Леммы и добавить в БД
             //создать сущность Индекс и добавить в БД
 
-
-
             return new IndexingResponse();
         } else {
             return new IndexingErrorResponse("Данная страница находится за пределами сайтов, \n" +
                     "указанных в конфигурационном файле\n");
         }
-    }
-
-    //получение главной страницы сайта из ссылки
-    private String getSiteUrl(String url) {
-
-        int numLetter = 0;
-        int thirdSymbol = 0;
-        char symbol = '/';
-
-        for (int i=0; i<url.length(); i++) {
-            if (url.charAt(i) == symbol) {
-                numLetter++;
-                if (numLetter == 3) {
-                    thirdSymbol = i + 1;
-                    break;
-                }
-            }
-        }
-        return url.substring(0, thirdSymbol);
     }
 
     private boolean siteInConfig(String url) {

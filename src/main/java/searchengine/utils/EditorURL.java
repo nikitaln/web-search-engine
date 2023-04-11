@@ -4,60 +4,37 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class EditorURL {
-    private final String HTTP = "http://";
-    private final String HTTPS = "https://";
-    private final String WWW = "www.";
-    private final String domainRU = "[^*?!@#$%&()+-,|\\].ru";
-    private final String domainCOM = ".com";
+    private final String HTTP_REGEX_RU = "http://[^*?!@#$%&()+-,|]+.ru/";
+    private final String HTTPS_REGEX_RU = "https://[^*?!@#$%&()+-,|]+.ru/";
+    private final String HTTP_REGEX_COM = "http://[^*?!@#$%&()+-,|]+.com/";
+
+    private final String HTTPS_REGEX_СOM = "https://[^*?!@#$%&()+-,|]+.com/";
+    private final String HTTP_REGEX_LIKE = "http://[^*?!@#$%&()+-,|]+.life/";
+    private final String HTTPS_REGEX_LIKE = "https://[^*?!@#$%&()+-,|]+.life/";
     private String url;
     public EditorURL(String url) {
         this.url = url;
     }
 
-    public void getSiteURL(String url) {
-        Pattern pattern;
+    public String getSiteURL() {
 
-        if (isHTTP(url)) {
-            System.out.printf("мы в http");
+        String siteURL = "";
 
-            if (isWWW(url)) {
-                System.out.printf("Мы попали в www");
+        String[] array = {HTTP_REGEX_RU, HTTPS_REGEX_RU,
+                HTTP_REGEX_COM,HTTPS_REGEX_СOM,
+                HTTP_REGEX_LIKE, HTTPS_REGEX_LIKE};
 
-                pattern = Pattern.compile(domainRU);
-                Matcher matcher = pattern.matcher(domainRU);
-                while (matcher.find()) {
-                    int start = matcher.start();
-                    int end = matcher.end();
-                    System.out.println(domainRU.substring(start, end));
+        for (int i = 0; i < array.length; i++) {
 
-                    System.out.printf("Мы попали");
-                }
+            Pattern pattern = Pattern.compile(array[i]);
 
-
-
+            Matcher matcher = pattern.matcher(url);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                siteURL = url.substring(start, end);
             }
-
-
-        } else if (isHTTPS()) {
-
-        } else {
-
         }
-
-
+        return siteURL;
     }
-
-    private boolean isHTTP(String url) {
-        return url.substring(0, HTTP.length()).equals(HTTP) ? true : false;
-    }
-    private boolean isHTTPS() {
-        return url.substring(0, HTTPS.length()).equals(HTTPS) ? true : false;
-    }
-
-    private boolean isWWW(String url) {
-    return false;
-    }
-
-
-
 }

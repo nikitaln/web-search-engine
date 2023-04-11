@@ -10,19 +10,10 @@ import java.io.IOException;
 public class Main {
     public static void main(String[] args) {
 
+        String url = "http://dimonvideo.ru/api/page1032";
 
-        try {
-            Document doc = Jsoup.connect("playback.ru/catalog/1141.html").get();
+        EditorURL editorURL = new EditorURL(url);
 
-            Elements elements = doc.select("a");
-
-            elements.forEach(element -> {
-                System.out.println(element.attr("href"));
-            });
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        System.out.println(editorURL.getSiteURL());
     }
 }
