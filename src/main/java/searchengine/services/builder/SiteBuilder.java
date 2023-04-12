@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.builder;
 
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class SiteBuilder {
 
@@ -27,14 +28,15 @@ public class SiteBuilder {
     private LemmaRepository lemmaRepository;
     private IndexRepository indexRepository;
 
-    public SiteBuilder(Site site, SiteRepository siteRepository, String url, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
-        this.site = site;
+    public SiteBuilder(SiteRepository siteRepository, String url, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.siteRepository = siteRepository;
         this.url = url;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
         this.indexRepository = indexRepository;
     }
+
+
 
     public void siteSaveToDB() {
 
@@ -51,7 +53,9 @@ public class SiteBuilder {
         pageSaveToDB(url, siteEntity);
     }
 
-    private void pageSaveToDB(String url, SiteEntity siteEntity) {
+    public void pageSaveToDB(String url, SiteEntity siteEntity) {
+
+
 
         try {
             Document doc2 = Jsoup.connect(url).get();
@@ -76,27 +80,27 @@ public class SiteBuilder {
 
         try {
             Document doc2 = Jsoup.connect(url).get();
-
             String htmlCode = doc2.outerHtml();
-
             LuceneMorphology luceneMorph = new RussianLuceneMorphology();
             LemmaFinder lemmaFinder = new LemmaFinder(luceneMorph);
             Map<String, Integer> map = new HashMap<>();
-
             map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(htmlCode));
 
             for (String key : map.keySet()) {
+                if (lemmaOnDB(key)) {
 
-                LemmaEntity lemma = new LemmaEntity();
-                lemma.setLemma(key);
-                lemma.setFrequency(1);
-                lemma.setSiteEntity(siteEntity);
+                    Optional<LemmaEntity> myLemma = lemmaRepository.findById(lemmaRepository.getLemmaId(key));
+                    LemmaEntity lemmaEntity = myLemma.get();
+                    lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
+                    lemmaRepository.save(lemmaEntity);
 
-                lemmaRepository.save(lemma);
-
-                System.out.println(key + " " + map.get(key));
-                saveIndex(lemma, indexRepository, pageEntity, map.get(key));
-
+                } else {
+                    LemmaEntity lemma = new LemmaEntity();
+                    lemma.setLemma(key);
+                    lemma.setFrequency(1);
+                    lemma.setSiteEntity(siteEntity);
+                    lemmaRepository.save(lemma);
+                }
             }
 
         } catch (IOException e) {
@@ -116,5 +120,12 @@ public class SiteBuilder {
 
         indexRepository.save(indexEntity);
 
+    }
+
+    private boolean lemmaOnDB(String word) {
+        if (lemmaRepository.contains(word).equals(word)) {
+            return true;
+        }
+        return false;
     }
 }

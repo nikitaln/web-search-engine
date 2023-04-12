@@ -12,11 +12,9 @@ public class EditorURL {
     private final String HTTP_REGEX_LIKE = "http://[^*?!@#$%&()+-,|]+.life/";
     private final String HTTPS_REGEX_LIKE = "https://[^*?!@#$%&()+-,|]+.life/";
     private String url;
-    public EditorURL(String url) {
-        this.url = url;
-    }
 
-    public String getSiteURL() {
+
+    public String getSiteURL(String url) {
 
         String siteURL = "";
 

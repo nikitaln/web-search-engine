@@ -3,7 +3,6 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
@@ -16,6 +15,8 @@ import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.builder.PageIndexing;
+import searchengine.services.builder.SiteBuilder;
 import searchengine.services.sitemap.SiteMapThread;
 import searchengine.utils.EditorURL;
 
@@ -25,8 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -81,45 +80,21 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse indexPage(String url) {
 
-        EditorURL editorURL = new EditorURL(url);
+        EditorURL editorURL = new EditorURL();
+        String siteUrl = editorURL.getSiteURL(url);
 
-        String siteUrl = editorURL.getSiteURL();
-
-        //проверить наличие в БД
+        //проверить наличие сайта в БД
         if (siteUrl.equals(siteRepository.contains(siteUrl))) {
+
             Optional<SiteEntity> site = siteRepository.findById(siteRepository.getId(siteUrl));
+            SiteEntity siteEntity = site.get();
 
-           SiteEntity siteEntity = site.get();
+            PageIndexing pageIndexing = new PageIndexing();
+            pageIndexing.indexPage(url);
 
-            try {
-
-                Document doc2 = Jsoup.connect(url).get();
-
-                PageEntity pageEntity = new PageEntity();
-
-                pageEntity.setSite(siteEntity);
-                pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
-                pageEntity.setContent(doc2.outerHtml());
-                pageEntity.setPath(url);
-
-                pageRepository.save(pageEntity);
-
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-
-
-///==========РАБОТА НАД ДАННЫМ КОДОМ
-
-            System.out.println("сайт в БД");
             return new IndexingResponse();
 
         } else if (siteInConfig(siteUrl)) {
-
-            //сайта нет в таблице, есть в конфиге
-            System.out.println("сайт в конфиг");
 
             List<Site> sitesList = sites.getSites();
 
@@ -130,8 +105,18 @@ public class IndexingServiceImpl implements IndexingService {
 
                 if (siteUrl.equals(site.getUrl())) {
 
-                    SiteBuilder siteBuilder = new SiteBuilder(site, siteRepository, url, pageRepository, lemmaRepository, indexRepository);
-                    siteBuilder.siteSaveToDB();
+                    SiteEntity siteEntity = new SiteEntity();
+
+                    siteEntity.setNameSite(site.getName());
+                    siteEntity.setUrl(site.getUrl());
+                    siteEntity.setTime(LocalDateTime.now());
+                    siteEntity.setText(null);
+                    siteEntity.setStatus(StatusType.INDEXING);
+
+                    siteRepository.save(siteEntity);
+
+                    SiteBuilder siteBuilder = new SiteBuilder(siteRepository, url, pageRepository, lemmaRepository, indexRepository);
+                    siteBuilder.pageSaveToDB(url, siteEntity);
 
                     break;
                 };
