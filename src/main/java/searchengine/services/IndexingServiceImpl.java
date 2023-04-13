@@ -1,14 +1,11 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
-import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
 import searchengine.repositories.IndexRepository;
@@ -16,11 +13,9 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.builder.PageIndexing;
-import searchengine.services.builder.SiteBuilder;
 import searchengine.services.sitemap.SiteMapThread;
 import searchengine.utils.EditorURL;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +31,14 @@ public class IndexingServiceImpl implements IndexingService {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private ArrayList<SiteMapThread> threads = new ArrayList<>();
-
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
+
+
+
+
+
+
 
     //метод запуска индексации сайта
     @Override
@@ -66,6 +66,11 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
+
+
+
+
+
     @Override
     public IndexingErrorResponse stopIndexing() {
 
@@ -76,6 +81,13 @@ public class IndexingServiceImpl implements IndexingService {
 
         return new IndexingErrorResponse("Остановка индексации сайта");
     }
+
+
+
+
+
+
+
 
     @Override
     public IndexingResponse indexPage(String url) {
@@ -89,8 +101,7 @@ public class IndexingServiceImpl implements IndexingService {
             Optional<SiteEntity> site = siteRepository.findById(siteRepository.getId(siteUrl));
             SiteEntity siteEntity = site.get();
 
-            PageIndexing pageIndexing = new PageIndexing();
-            pageIndexing.indexPage(url);
+            new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
 
             return new IndexingResponse();
 
@@ -106,28 +117,19 @@ public class IndexingServiceImpl implements IndexingService {
                 if (siteUrl.equals(site.getUrl())) {
 
                     SiteEntity siteEntity = new SiteEntity();
-
                     siteEntity.setNameSite(site.getName());
                     siteEntity.setUrl(site.getUrl());
                     siteEntity.setTime(LocalDateTime.now());
                     siteEntity.setText(null);
                     siteEntity.setStatus(StatusType.INDEXING);
-
                     siteRepository.save(siteEntity);
 
-                    SiteBuilder siteBuilder = new SiteBuilder(siteRepository, url, pageRepository, lemmaRepository, indexRepository);
-                    siteBuilder.pageSaveToDB(url, siteEntity);
+                    PageIndexing pageIndexing = new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository);
+                    pageIndexing.indexPage();
 
                     break;
                 };
             }
-
-            //создать сущность Сайт и добавить в БД
-            //создать сущность Страница и добавить в БД
-            //взять HTML-код и удалить все Теги, затем Найти все Леммы
-            //создать сущность Леммы и добавить в БД
-            //создать сущность Индекс и добавить в БД
-
             return new IndexingResponse();
         } else {
             return new IndexingErrorResponse("Данная страница находится за пределами сайтов, \n" +
