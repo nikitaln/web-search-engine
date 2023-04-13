@@ -6,6 +6,7 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
 import searchengine.repositories.IndexRepository;
@@ -101,10 +102,13 @@ public class IndexingServiceImpl implements IndexingService {
             Optional<SiteEntity> site = siteRepository.findById(siteRepository.getId(siteUrl));
             SiteEntity siteEntity = site.get();
 
+            deletePage(url);
+
             new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
 
             return new IndexingResponse();
 
+            //проверка наличие сайта в конфиге
         } else if (siteInConfig(siteUrl)) {
 
             List<Site> sitesList = sites.getSites();
@@ -131,6 +135,13 @@ public class IndexingServiceImpl implements IndexingService {
                 };
             }
             return new IndexingResponse();
+        } else if (url.equals("del")) {
+
+            System.out.println("Зашли");
+
+            deletePage(url);
+
+            return new IndexingResponse();
         } else {
             return new IndexingErrorResponse("Данная страница находится за пределами сайтов, \n" +
                     "указанных в конфигурационном файле\n");
@@ -149,5 +160,17 @@ public class IndexingServiceImpl implements IndexingService {
             }
         }
         return false;
+    }
+
+    private void deletePage(String url) {
+        String text = "https://www.playback.ru/catalog/1141.html";
+        if (text.equals(pageRepository.contains(text))) {
+            int pageId = pageRepository.getId(text);
+
+            System.out.println("Удаляю");
+            Optional<PageEntity> pageEntity = pageRepository.findById(pageId);
+            pageRepository.deleteById(pageId);
+
+        }
     }
 }
