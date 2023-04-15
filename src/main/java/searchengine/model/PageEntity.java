@@ -1,6 +1,10 @@
 package searchengine.model;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "Page")
@@ -21,6 +25,9 @@ public class PageEntity {
 
     @Column(name = "content", columnDefinition = "LONGTEXT NOT NULL")
     private String content;
+
+    @OneToMany(mappedBy = "pageEntity", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<IndexEntity> indexEntityList = new ArrayList<>();
 
     public int getId() {
         return id;
@@ -61,4 +68,5 @@ public class PageEntity {
     public void setContent(String content) {
         this.content = content;
     }
+
 }

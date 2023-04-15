@@ -17,6 +17,7 @@ import searchengine.services.builder.PageIndexing;
 import searchengine.services.sitemap.SiteMapThread;
 import searchengine.utils.EditorURL;
 
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,12 +35,6 @@ public class IndexingServiceImpl implements IndexingService {
     private ArrayList<SiteMapThread> threads = new ArrayList<>();
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
-
-
-
-
-
-
 
     //метод запуска индексации сайта
     @Override
@@ -67,11 +62,6 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
-
-
-
-
-
     @Override
     public IndexingErrorResponse stopIndexing() {
 
@@ -82,13 +72,6 @@ public class IndexingServiceImpl implements IndexingService {
 
         return new IndexingErrorResponse("Остановка индексации сайта");
     }
-
-
-
-
-
-
-
 
     @Override
     public IndexingResponse indexPage(String url) {
@@ -101,8 +84,6 @@ public class IndexingServiceImpl implements IndexingService {
 
             Optional<SiteEntity> site = siteRepository.findById(siteRepository.getId(siteUrl));
             SiteEntity siteEntity = site.get();
-
-            deletePage(url);
 
             new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
 
@@ -139,7 +120,7 @@ public class IndexingServiceImpl implements IndexingService {
 
             System.out.println("Зашли");
 
-            deletePage(url);
+            deletePage("https://www.playback.ru/catalog/1141.html");
 
             return new IndexingResponse();
         } else {
@@ -169,7 +150,10 @@ public class IndexingServiceImpl implements IndexingService {
 
             System.out.println("Удаляю");
             Optional<PageEntity> pageEntity = pageRepository.findById(pageId);
+            PageEntity page = pageEntity.get();
             pageRepository.deleteById(pageId);
+            System.out.println("Удалено");
+
 
         }
     }

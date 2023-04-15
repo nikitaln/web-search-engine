@@ -10,7 +10,7 @@ public class IndexEntity {
     private int id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "page_id", nullable = false, referencedColumnName = "id")
+    @JoinColumn(name = "page_id", nullable = false)
     private PageEntity pageEntity;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)

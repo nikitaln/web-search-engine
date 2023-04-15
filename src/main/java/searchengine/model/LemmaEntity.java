@@ -7,7 +7,6 @@ public class LemmaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "site_id", nullable = false, referencedColumnName = "id")
     private SiteEntity siteEntity;
