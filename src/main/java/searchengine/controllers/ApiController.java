@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.dto.search.SearchTotalResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
@@ -40,6 +41,11 @@ public class ApiController {
     public ResponseEntity<IndexingResponse> indexPage(String url) {
         return ResponseEntity.ok(indexingService.indexPage(url));
     }
+//
+//    @GetMapping("/search")
+//    public ResponseEntity<SearchTotalResponse> search(String query) {
+//        return null;
+//    }
 
 
 

@@ -1,9 +1,13 @@
 package searchengine.services.sitemap;
 
-public class FlagObject {
+public class FlagStop {
     public volatile boolean stopNow = false;
 
-    protected void stopForkJoin() {
+    public boolean isStopNow() {
+        return stopNow;
+    }
+
+    public void stopRecursiveTask() {
         stopNow = true;
     }
 }

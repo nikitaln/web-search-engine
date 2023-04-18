@@ -1,5 +1,7 @@
 package searchengine.model;
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "`lemma`")
@@ -14,6 +16,9 @@ public class LemmaEntity {
     private String lemma;
     @Column(name = "frequency", columnDefinition = "INT NOT NULL")
     private int frequency;
+
+//    @OneToMany(mappedBy = "lemmaEntity", cascade = CascadeType.ALL)
+//    private List<IndexEntity> indexEntityList = new ArrayList<>();
 
     public int getId() {
         return id;

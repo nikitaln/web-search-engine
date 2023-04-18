@@ -2,12 +2,10 @@ package searchengine.model;
 
 import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Entity
-@Table(name = "Page")
+@Table(name = "`Page`", indexes = @Index(columnList = "path"))
 public class PageEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +15,7 @@ public class PageEntity {
     @JoinColumn(name = "site_id", nullable = false)
     private SiteEntity siteEntity;
 
-    @Column(name = "path", columnDefinition = "TEXT NOT NULL")
+    @Column(name = "path", columnDefinition = "VARCHAR(255) NOT NULL")
     private String path;
 
     @Column(name = "code", columnDefinition = "INT NOT NULL")

@@ -13,6 +13,7 @@ import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.builder.PageIndexing;
 import searchengine.services.lemma.LemmaFinder;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecursiveIndexingTask extends RecursiveAction {
 
@@ -27,58 +29,64 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private String link;
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
+    private FlagStop flagStop;
 
-    private LemmaRepository lemmaRepository;
-    private IndexRepository indexRepository;
 
-    public RecursiveIndexingTask(SiteEntity siteEntity,
-                                 String link,
-                                 SiteRepository siteRepository,
-                                 PageRepository pageRepository) {
+    public RecursiveIndexingTask(SiteEntity siteEntity, String link, SiteRepository siteRepository, PageRepository pageRepository, FlagStop flagStop) {
 
         this.siteEntity = siteEntity;
         this.link = link;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
+        this.flagStop = flagStop;
     }
 
     @Override
     protected void compute() {
 
-        ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
+        System.out.println("начало " + flagStop.isStopNow());
 
-        try {
-            Connection.Response response = Jsoup.connect(link).execute();
-            Document doc = response.parse();
-            Elements elements = doc.select("a");
-            elements.forEach(element -> {
-                String newLink = element.absUrl("href");
+        //Флажок завершения задачи
+        if (!flagStop.isStopNow()) {
 
-                if (isDomainUrl(newLink)) {
+            ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
 
-                    synchronized (pageRepository) {
-                        if (!containsInDataBase(newLink)) {
+            try {
+                Connection.Response response = Jsoup.connect(link).execute();
+                Document doc = response.parse();
+                Elements elements = doc.select("a");
+                elements.forEach(element -> {
+                    String newLink = element.absUrl("href");
 
-                            savePage(newLink);
-                            System.out.println(newLink + " " + Thread.currentThread().getName());
+                    if (isDomainUrl(newLink)) {
 
+                        synchronized (pageRepository) {
 
-                            RecursiveIndexingTask task = new RecursiveIndexingTask(
-                                    siteEntity,
-                                    newLink,
-                                    siteRepository,
-                                    pageRepository);
-                            task.fork();
-                            allTasks.add(task);
+                            if (!containsInDataBase(newLink)) {
+
+                                savePage(newLink);
+                                System.out.println(newLink + " " + Thread.currentThread().getName());
+
+                                RecursiveIndexingTask task = new RecursiveIndexingTask(
+                                        siteEntity,
+                                        newLink,
+                                        siteRepository,
+                                        pageRepository,
+                                        flagStop);
+                                task.fork();
+                                allTasks.add(task);
+
+                            }
                         }
                     }
-                }
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        for (RecursiveIndexingTask task : allTasks) {
-            task.join();
+                });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            for (RecursiveIndexingTask task : allTasks) {
+                task.join();
+            }
+
         }
     }
     public boolean containsInDataBase(String link) {
@@ -88,7 +96,6 @@ public class RecursiveIndexingTask extends RecursiveAction {
             return false;
         }
     }
-
     public boolean isDomainUrl(String link) {
         if (link.startsWith(siteEntity.getUrl())
                 && !link.contains("#")
@@ -117,44 +124,13 @@ public class RecursiveIndexingTask extends RecursiveAction {
             pageEntity.setPath(link);
             pageRepository.save(pageEntity);
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    public void saveLemma(String htmlContent, SiteEntity siteEntity) {
-        //необходимость сохранить лемму
-        try {
-            LuceneMorphology luceneMorphology = new RussianLuceneMorphology();
-            LemmaFinder lemmaFinder = new LemmaFinder(luceneMorphology);
-            String onlyText = lemmaFinder.deleteHtmlTags(htmlContent);
-
-            Map<String, Integer> map = new HashMap<>();
-
-            map = lemmaFinder.getLemmaMapWithoutParticles(onlyText);
-
-
-
-            for (String key : map.keySet()) {
-                String lemma = key;
-                int countLemma = map.get(key);
-
-                LemmaEntity lemmaEntity = new LemmaEntity();
-                lemmaEntity.setLemma(lemma);
-                lemmaEntity.setFrequency(1);
-                lemmaEntity.setSiteEntity(siteEntity);
-                lemmaRepository.save(lemmaEntity);
-            }
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void saveIndex() {
-
-
-    }
 
 //      парсинг HTML кода от эмоджи и тд
 //    public String checkHtmlCode(String htmlCode) {
@@ -163,4 +139,5 @@ public class RecursiveIndexingTask extends RecursiveAction {
 //        String codeHtlmBeforeCheck = htmlCode.replaceAll(regex, "");
 //        return codeHtlmBeforeCheck;
 //    }
+
 }
