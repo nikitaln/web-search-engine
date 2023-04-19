@@ -3,6 +3,8 @@ package searchengine.model;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Site")
@@ -26,6 +28,9 @@ public class SiteEntity {
 
     @Column(name = "name", columnDefinition = "VARCHAR(255) NOT NULL")
     private String nameSite;
+
+    @OneToMany(mappedBy = "siteEntity", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<PageEntity> indexEntityList = new ArrayList<>();
 
     public int getId() {
         return id;

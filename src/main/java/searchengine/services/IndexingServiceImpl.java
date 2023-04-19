@@ -34,9 +34,8 @@ public class IndexingServiceImpl implements IndexingService {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private ArrayList<SiteMapThread> threads = new ArrayList<>();
-    private SiteMapThread siteMapThread1;
+    private SiteMapThread siteMapThread;
     private ExecutorService executorService;
-
     private FlagStop flagStop = new FlagStop();
 
     //метод запуска индексации сайта
@@ -48,9 +47,18 @@ public class IndexingServiceImpl implements IndexingService {
         for (int i = 0; i < sitesList.size(); i++) {
 
             Site site = sitesList.get(i);
+
+            //в процессе
+            if (siteContainsInDB(site.getUrl())) {
+                SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
+                System.out.println(siteEntity.getNameSite());
+                siteRepository.delete(siteEntity);
+                System.out.println("Удалили");
+            }
+
             executorService = Executors.newSingleThreadExecutor();
-            siteMapThread1 = new SiteMapThread(site, pageRepository, siteRepository, flagStop);
-            executorService.submit(siteMapThread1);
+            siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
+            executorService.execute(siteMapThread);
         }
 
         System.out.println("Вышли из цикла");

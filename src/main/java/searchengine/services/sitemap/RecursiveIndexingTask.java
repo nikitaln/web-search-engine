@@ -25,19 +25,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecursiveIndexingTask extends RecursiveAction {
 
-    private SiteEntity siteEntity;
     private String link;
+    private SiteEntity siteEntity;
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
+    private LemmaRepository lemmaRepository;
+    private IndexRepository indexRepository;
     private FlagStop flagStop;
 
-
-    public RecursiveIndexingTask(SiteEntity siteEntity, String link, SiteRepository siteRepository, PageRepository pageRepository, FlagStop flagStop) {
-
-        this.siteEntity = siteEntity;
+    public RecursiveIndexingTask(String link, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop) {
         this.link = link;
+        this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
+        this.lemmaRepository = lemmaRepository;
+        this.indexRepository = indexRepository;
         this.flagStop = flagStop;
     }
 
@@ -68,10 +70,12 @@ public class RecursiveIndexingTask extends RecursiveAction {
                                 System.out.println(newLink + " " + Thread.currentThread().getName());
 
                                 RecursiveIndexingTask task = new RecursiveIndexingTask(
-                                        siteEntity,
                                         newLink,
+                                        siteEntity,
                                         siteRepository,
                                         pageRepository,
+                                        lemmaRepository,
+                                        indexRepository,
                                         flagStop);
                                 task.fork();
                                 allTasks.add(task);
@@ -113,22 +117,23 @@ public class RecursiveIndexingTask extends RecursiveAction {
 
     public void savePage(String link) {
 
-        try {
-            Document doc2 = Jsoup.connect(link).get();
+        new PageIndexing(link, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
 
-            PageEntity pageEntity = new PageEntity();
-
-            pageEntity.setSite(siteEntity);
-            pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
-            pageEntity.setContent(doc2.outerHtml());
-            pageEntity.setPath(link);
-            pageRepository.save(pageEntity);
-
-
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            Document doc2 = Jsoup.connect(link).get();
+//
+//            PageEntity pageEntity = new PageEntity();
+//
+//            pageEntity.setSite(siteEntity);
+//            pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
+//            pageEntity.setContent(doc2.outerHtml());
+//            pageEntity.setPath(link);
+//            pageRepository.save(pageEntity);
+//
+//
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
 

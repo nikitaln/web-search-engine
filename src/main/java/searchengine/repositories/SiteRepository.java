@@ -16,4 +16,6 @@ public interface SiteRepository extends CrudRepository<SiteEntity, Integer> {
     @Query(value = "SELECT id FROM site WHERE url LIKE %:url%", nativeQuery = true)
     int getId(String url);
 
+    SiteEntity getByUrl(String url);
+
 }
