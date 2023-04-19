@@ -1,2 +1,7 @@
-package searchengine.services;public interface SearchService {
+package searchengine.services;
+
+import searchengine.dto.search.SearchTotalResponse;
+
+public interface SearchService {
+    SearchTotalResponse searchInformation(String query);
 }

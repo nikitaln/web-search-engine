@@ -61,6 +61,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
                     String newLink = element.absUrl("href");
 
                     if (isDomainUrl(newLink)) {
+                        System.out.println("Ссылка: " + newLink);
 
                         synchronized (pageRepository) {
 

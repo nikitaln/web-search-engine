@@ -20,6 +20,7 @@ import searchengine.utils.EditorURL;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,24 +52,17 @@ public class IndexingServiceImpl implements IndexingService {
             //в процессе
             if (siteContainsInDB(site.getUrl())) {
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
-                System.out.println(siteEntity.getNameSite());
-                siteRepository.delete(siteEntity);
-                System.out.println("Удалили");
+                if (siteEntity.equals(StatusType.INDEXED)) {
+                    siteRepository.delete(siteEntity);
+                } else if (siteEntity.equals(StatusType.INDEXING)) {
+                    return new IndexingErrorResponse("Индексация уже запущена");
+                }
             }
-
             executorService = Executors.newSingleThreadExecutor();
             siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
             executorService.execute(siteMapThread);
         }
-
-        System.out.println("Вышли из цикла");
-
-
-        if (sitesList.size() == 4) {
-            return new IndexingResponse();
-        } else {
-            return new IndexingErrorResponse("ОШИБКА");
-        }
+        return new IndexingResponse();
     }
 
     @Override
@@ -76,6 +70,17 @@ public class IndexingServiceImpl implements IndexingService {
 
         System.out.println("Вошли в стоп");
         flagStop.stopRecursiveTask();
+
+        Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
+
+        while (iterator.hasNext()) {
+            SiteEntity siteEntity = iterator.next();
+            siteEntity.setStatus(StatusType.FAILED);
+            siteEntity.setTime(LocalDateTime.now());
+            siteEntity.setText("Stop by user");
+            siteRepository.save(siteEntity);
+        }
+
         executorService.shutdown();
 
         return new IndexingErrorResponse("Остановка индексации сайта");

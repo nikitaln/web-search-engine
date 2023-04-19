@@ -68,12 +68,12 @@ public class PageIndexing {
 
             map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(codeHTML));
 
+
             for (String key : map.keySet()) {
 
                 if (lemmaContainsOnDB(key)) {
 
-                    Optional<LemmaEntity> myLemma = lemmaRepository.findById(lemmaRepository.getLemmaId(key));
-                    LemmaEntity lemmaEntity = myLemma.get();
+                    LemmaEntity lemmaEntity = lemmaRepository.findById(lemmaRepository.getLemmaId(key)).get();
                     lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
                     lemmaRepository.save(lemmaEntity);
                     saveIndex(map.get(key), lemmaEntity, pageEntity);
