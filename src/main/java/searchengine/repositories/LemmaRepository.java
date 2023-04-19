@@ -12,4 +12,6 @@ public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
 
     @Query(value = "SELECT id FROM lemma WHERE lemma LIKE :word", nativeQuery = true)
     int getLemmaId(String word);
+    @Query(value = "SELECT frequency FROM lemma WHERE lemma LIKE :word", nativeQuery = true)
+    int getFrequencyByLemma(String word);
 }
