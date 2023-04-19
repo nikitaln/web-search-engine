@@ -33,6 +33,14 @@ public class SearchServiceImpl implements SearchService {
                 mapLemmaFrequency.put(key, lemmaRepository.getFrequencyByLemma(key));
             }
 
+            mapLemmaFrequency.entrySet()
+                    .stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue())
+                    .forEach(System.out::println);
+
+            for (String key : mapLemmaFrequency.keySet()) {
+                System.out.println("слово: " + key + ", ч-та: " + mapLemmaFrequency.get(key));
+            }
 
             //продолжение
 
