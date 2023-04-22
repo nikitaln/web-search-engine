@@ -14,4 +14,7 @@ public interface IndexRepository extends CrudRepository<IndexEntity, Integer> {
 
     @Query(value = "SELECT `page_id` FROM `index` WHERE `lemma_id` = :lemmaId", nativeQuery = true)
     List<Integer> getAllPagesIdByLemmaId(int lemmaId);
+
+    @Query(value = "SELECT `rank` FROM `index` WHERE `lemma_id` = :lemmaId AND `page_id` = :pageId", nativeQuery = true)
+    float getRankByLemmaIdAndPageId(int lemmaId, int pageId);
 }
