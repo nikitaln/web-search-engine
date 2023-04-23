@@ -26,6 +26,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @Service - анотация Spring, показывает, что наш класс является сервисом,
+ * и выполняет функцию поставщиком услуг
+ *
+ * @RequiredArgsConstructor - анотация библиотеки Lombok, сокращает шаблонный
+ * код и генерирует конструктор из полей final
+ *
+ */
+
 @Service
 @RequiredArgsConstructor
 public class IndexingServiceImpl implements IndexingService {

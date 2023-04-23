@@ -10,11 +10,18 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.services.lemma.LemmaFinder;
 
-import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * @Service - анотация Spring, показывает, что наш класс является сервисом,
+ * и выполняет функцию поставщиком услуг
+ *
+ * @RequiredArgsConstructor - анотация библиотеки Lombok, сокращает шаблонный
+ * код и генерирует конструктор из полей final
+ *
+ */
 @Service
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
@@ -175,6 +182,16 @@ public class SearchServiceImpl implements SearchService {
         for (Integer key : mapRankRel.keySet()) {
             System.out.println("pageID=" + key + " rank_rel=" + mapRankRel.get(key));
         }
+
+        //сортировка относительной релевантности
+        mapRankRel = sortRelevance(mapRankRel);
+
+        System.out.println();
+
+        for (Integer key : mapRankRel.keySet()) {
+            System.out.println("pageID=" + key + " rank_rel=" + mapRankRel.get(key));
+        }
+
     }
 
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
@@ -186,4 +203,19 @@ public class SearchServiceImpl implements SearchService {
         }
         return newMap;
     }
+
+    private Map<Integer, Float> sortRelevance(Map<Integer, Float> map) {
+
+        map = map.entrySet().stream()
+                .sorted(Comparator.comparingInt(value -> (int) -value.getValue()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (a, b) -> { throw new AssertionError(); },
+                        LinkedHashMap::new
+                ));
+
+        return map;
+    }
+
 }
