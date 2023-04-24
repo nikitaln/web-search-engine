@@ -8,5 +8,5 @@ import java.util.List;
 public class SearchTotalResponse {
     private boolean results;
     private int count;
-    private List<SearchParametersResponse> data;
+    private List<SearchDataResponse> data;
 }

@@ -3,6 +3,7 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.LemmaConfiguration;
+import searchengine.dto.search.SearchDataResponse;
 import searchengine.dto.search.SearchTotalResponse;
 import searchengine.model.LemmaEntity;
 import searchengine.repositories.IndexRepository;
@@ -71,7 +72,24 @@ public class SearchServiceImpl implements SearchService {
 
         countRank(pagesId, mapLemmaFrequency);
 
-        return null;
+        SearchDataResponse searchDataResponse= new SearchDataResponse();
+        searchDataResponse.setRelevance(1.0);
+        searchDataResponse.setUrl("/tickets/concert");
+        searchDataResponse.setSnippet("Концерт пройдет на стадионе Олимпийкий, где будет много народу");
+        searchDataResponse.setTitle("Касса билетов");
+        searchDataResponse.setSite("Кассир.ру");
+        searchDataResponse.setSiteName("kassir.ru");
+
+        List<SearchDataResponse> list = new ArrayList<>();
+        list.add(searchDataResponse);
+
+        SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
+        searchTotalResponse.setCount(530);
+        searchTotalResponse.setResults(true);
+        searchTotalResponse.setData(list);
+
+
+        return searchTotalResponse;
     }
 
     //получение списка уникальных лемм и их частоты
