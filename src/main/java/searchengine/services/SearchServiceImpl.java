@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.LemmaConfiguration;
 import searchengine.dto.search.SearchDataResponse;
+import searchengine.dto.search.SearchErrorResponse;
 import searchengine.dto.search.SearchTotalResponse;
 import searchengine.model.LemmaEntity;
 import searchengine.repositories.IndexRepository;
@@ -72,20 +73,31 @@ public class SearchServiceImpl implements SearchService {
 
         countRank(pagesId, mapLemmaFrequency);
 
-        SearchDataResponse searchDataResponse= new SearchDataResponse();
-        searchDataResponse.setRelevance(1.0);
-        searchDataResponse.setUrl("/tickets/concert");
-        searchDataResponse.setSnippet("Концерт пройдет на стадионе Олимпийкий, где будет много народу");
-        searchDataResponse.setTitle("Касса билетов");
-        searchDataResponse.setSite("Кассир.ру");
-        searchDataResponse.setSiteName("kassir.ru");
+        SearchDataResponse data = new SearchDataResponse();
+
+        data.setRelevance(0.6);
+        data.setUrl("/tickets/concert");
+        data.setSnippet("Концерт пройдет на стадионе <b>Олимпийкий</b>, где будет много народу");
+        data.setTitle("Касса билетов");
+        data.setSite("http://www.site.com");
+        data.setSiteName("kassir.ru");
+
+        SearchDataResponse data1 = new SearchDataResponse();
+
+        data1.setRelevance(0.6);
+        data1.setUrl("/tickets/concert");
+        data1.setSnippet("Концерт пройдет на стадионе <b>Олимпийкий</b>, где будет много народу");
+        data1.setTitle("Касса билетов");
+        data1.setSite("http://www.site.com");
+        data1.setSiteName("kassir.ru");
 
         List<SearchDataResponse> list = new ArrayList<>();
-        list.add(searchDataResponse);
+        list.add(data);
+        list.add(data1);
 
         SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
         searchTotalResponse.setCount(530);
-        searchTotalResponse.setResults(true);
+        searchTotalResponse.setResult(true);
         searchTotalResponse.setData(list);
 
 
