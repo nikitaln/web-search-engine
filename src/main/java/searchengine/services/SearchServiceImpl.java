@@ -1,6 +1,7 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
 import org.springframework.stereotype.Service;
 import searchengine.config.LemmaConfiguration;
 import searchengine.dto.search.SearchDataResponse;
@@ -31,12 +32,13 @@ public class SearchServiceImpl implements SearchService {
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
     private List<Integer> pagesId = new ArrayList<>();
+    private List<SearchTotalResponse> totalResponse = new ArrayList<>();
     private int control = 0;
 
     @Override
     public SearchTotalResponse searchInformation(String query) {
-        control = 0;
-        deletePages();
+        //очищаем список страниц
+        pagesId.clear();
 
         Map<String, Integer> mapLemmaFrequency = new HashMap<>();
         //получаем список лемм-частота
@@ -45,8 +47,10 @@ public class SearchServiceImpl implements SearchService {
         //удаление популярный лемм
         mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
-        //необходимо отсортировать
+        //необходимо отсортировать по возрастанию частоты от самой маленькой
         mapLemmaFrequency = ascendingSortByValue(mapLemmaFrequency);
+
+        //=========================
 
         for (String key : mapLemmaFrequency.keySet()) {
 
@@ -54,16 +58,16 @@ public class SearchServiceImpl implements SearchService {
 
             int lemmaId = lemmaRepository.getLemmaId(key);
 
-            if (control == 0) {
+            if (pagesId.size() == 0) {
                 pagesId = getAllPagesId(lemmaId);
-                control = control + 1;
             } else {
                 searchForTheSamePages(getAllPagesId(lemmaId));
-                control = control + 1;
             }
         }
 
-        //поиск всех страниц где встречается лемма
+        if (pagesId.size() == 0) {
+            return new SearchErrorResponse("Совпадений не найдено");
+        }
 
         int i = 1;
         for (Integer pageId : pagesId) {
@@ -71,6 +75,8 @@ public class SearchServiceImpl implements SearchService {
             i = i + 1;
         }
 
+
+        //расчитать Ранк
         countRank(pagesId, mapLemmaFrequency);
 
         SearchDataResponse data = new SearchDataResponse();
@@ -161,13 +167,13 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
-    private List<Integer> deletePages() {
-
-        for (int i = 0; i < pagesId.size(); i++) {
-            pagesId.remove(i);
-        }
-        return pagesId;
-    }
+//    private List<Integer> deletePages() {
+//
+//        for (int i = 0; i < pagesId.size(); i++) {
+//            pagesId.remove(i);
+//        }
+//        return pagesId;
+//    }
 
     private void countRank(List<Integer> list, Map<String, Integer> map) {
 
@@ -175,6 +181,7 @@ public class SearchServiceImpl implements SearchService {
         //id страницы и абсолютная релевантность
         Map<Integer, Float> mapRankAbs = new HashMap<>();
         Map<Integer, Float> mapRankRel = new HashMap<>();
+
 
         for (int i = 0; i < list.size(); i++) {
             System.out.println("ID страницы - " + list.get(i));
@@ -214,7 +221,7 @@ public class SearchServiceImpl implements SearchService {
         }
 
         //сортировка относительной релевантности
-        mapRankRel = sortRelevance(mapRankRel);
+        mapRankRel = descendingSortRelevance(mapRankRel);
 
         System.out.println();
 
@@ -225,6 +232,9 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
+
+        //удаление слишком популярных лемм, например которые встречаются на всех страницах
+
         Map<String, Integer> newMap = new HashMap<>();
         for (String key : map.keySet()) {
             if (map.get(key) < 200) {
@@ -234,7 +244,7 @@ public class SearchServiceImpl implements SearchService {
         return newMap;
     }
 
-    private Map<Integer, Float> sortRelevance(Map<Integer, Float> map) {
+    private Map<Integer, Float> descendingSortRelevance(Map<Integer, Float> map) {
 
         map = map.entrySet().stream()
                 .sorted(Comparator.comparingInt(value -> (int) -value.getValue()))
