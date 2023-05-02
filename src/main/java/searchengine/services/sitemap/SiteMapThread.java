@@ -46,12 +46,13 @@ public class SiteMapThread implements Runnable {
         //записали сущность в БД
         siteRepository.save(siteEntity);
 
-        System.out.println("Создали сущность - " + siteEntity.getNameSite());
+        System.out.println("Создали сущность сайт");
 
         System.out.println("Поток <" + Thread.currentThread().getName() + "> индексирует сайт - " + site.getName());
 
         //запускаем индексацию при помощи fork-join
         recursiveIndexingTask = new RecursiveIndexingTask(siteEntity.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
+
         fjp = new ForkJoinPool();
         fjp.invoke(recursiveIndexingTask);
 

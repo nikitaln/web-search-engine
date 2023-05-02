@@ -35,4 +35,10 @@ public class EditorURL {
         }
         return siteURL;
     }
+
+    public void deleteSite(String url) {
+        String site = "https://www.playback.ru/";
+        String newUrl = url.substring(site.length()-1);
+        System.out.println(newUrl);
+    }
 }

@@ -14,11 +14,14 @@ import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 public class PageIndexing {
+    private Map<String, Integer> map;
     private String url;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
@@ -37,8 +40,13 @@ public class PageIndexing {
 
     public void indexPage() {
 
+        siteEntity.setTime(LocalDateTime.now());
+        siteRepository.save(siteEntity);
+
+        String url2 = siteEntity.getUrl() + url.substring(1);
+
         try {
-            Document doc2 = Jsoup.connect(url).get();
+            Document doc2 = Jsoup.connect(url2).get();
 
             PageEntity pageEntity = new PageEntity();
 
@@ -86,7 +94,6 @@ public class PageIndexing {
                     lemmaEntity.setSiteEntity(siteEntity);
                     lemmaRepository.save(lemmaEntity);
                     saveIndex(map.get(key), lemmaEntity, pageEntity);
-
                 }
             }
 
@@ -112,5 +119,4 @@ public class PageIndexing {
         indexRepository.save(indexEntity);
 
     }
-
 }

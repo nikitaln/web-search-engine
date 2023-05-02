@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +59,6 @@ public class IndexingServiceImpl implements IndexingService {
 
             Site site = sitesList.get(i);
 
-            //в процессе
             if (siteContainsInDB(site.getUrl())) {
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
                 if (siteEntity.equals(StatusType.INDEXED)) {
@@ -75,24 +75,42 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public IndexingErrorResponse stopIndexing() {
+    public IndexingResponse stopIndexing() {
 
         System.out.println("Вошли в стоп");
-        flagStop.stopRecursiveTask();
+        //flagStop.stopRecursiveTask();
+//        if (siteRepository.findById(1).get().getStatus() == StatusType.INDEXING) {
+//            SiteEntity siteEntity = siteRepository.findById(1).get();
+//            flagStop.stopRecursiveTask();
+//            siteEntity.setStatus(StatusType.FAILED);
+//            siteEntity.setTime(LocalDateTime.now());
+//            siteEntity.setText("Остановка пользователем");
+//            siteRepository.save(siteEntity);
+//            return new IndexingResponse();
+//        }
 
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
         while (iterator.hasNext()) {
+
             SiteEntity siteEntity = iterator.next();
-            siteEntity.setStatus(StatusType.FAILED);
-            siteEntity.setTime(LocalDateTime.now());
-            siteEntity.setText("Stop by user");
-            siteRepository.save(siteEntity);
+            if (siteEntity.getStatus() == StatusType.INDEXING) {
+                flagStop.stopRecursiveTask();
+                siteEntity.setStatus(StatusType.FAILED);
+                siteEntity.setTime(LocalDateTime.now());
+                siteEntity.setText("Остановка пользователем");
+                siteRepository.save(siteEntity);
+                return new IndexingResponse();
+            }
+//            siteEntity.setStatus(StatusType.FAILED);
+//            siteEntity.setTime(LocalDateTime.now());
+//            siteEntity.setText("Остановка пользователем");
+//            siteRepository.save(siteEntity);
         }
 
         executorService.shutdown();
 
-        return new IndexingErrorResponse("Остановка индексации сайта");
+        return new IndexingErrorResponse("Индексация не запущена");
     }
 
     @Override

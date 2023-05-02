@@ -6,6 +6,7 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.config.LemmaConfiguration;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
@@ -33,7 +34,13 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private IndexRepository indexRepository;
     private FlagStop flagStop;
 
-    public RecursiveIndexingTask(String link, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop) {
+    public RecursiveIndexingTask(String link,
+                                 SiteEntity siteEntity,
+                                 SiteRepository siteRepository,
+                                 PageRepository pageRepository,
+                                 LemmaRepository lemmaRepository,
+                                 IndexRepository indexRepository,
+                                 FlagStop flagStop) {
         this.link = link;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
@@ -46,8 +53,6 @@ public class RecursiveIndexingTask extends RecursiveAction {
     @Override
     protected void compute() {
 
-        System.out.println("начало " + flagStop.isStopNow());
-
         //Флажок завершения задачи
         if (!flagStop.isStopNow()) {
 
@@ -58,29 +63,35 @@ public class RecursiveIndexingTask extends RecursiveAction {
                 Document doc = response.parse();
                 Elements elements = doc.select("a");
                 elements.forEach(element -> {
-                    String newLink = element.absUrl("href");
 
-                    if (isDomainUrl(newLink)) {
-                        System.out.println("Ссылка: " + newLink);
+                    if (!flagStop.isStopNow()) {
 
-                        synchronized (pageRepository) {
+                        String newLink = element.absUrl("href");
 
-                            if (!containsInDataBase(newLink)) {
 
-                                savePage(newLink);
-                                System.out.println(newLink + " " + Thread.currentThread().getName());
+                        if (isDomainUrl(newLink)) {
 
-                                RecursiveIndexingTask task = new RecursiveIndexingTask(
-                                        newLink,
-                                        siteEntity,
-                                        siteRepository,
-                                        pageRepository,
-                                        lemmaRepository,
-                                        indexRepository,
-                                        flagStop);
-                                task.fork();
-                                allTasks.add(task);
+                            String newLink1 = deleteUrl(newLink);
 
+                            synchronized (pageRepository) {
+
+                                if (!containsInDataBase(newLink1)) {
+
+                                    savePage(newLink1);
+
+                                    System.out.println("сохр. ссылку " + newLink1 + " | из потока " + Thread.currentThread().getName());
+
+                                    RecursiveIndexingTask task = new RecursiveIndexingTask(
+                                            newLink,
+                                            siteEntity,
+                                            siteRepository,
+                                            pageRepository,
+                                            lemmaRepository,
+                                            indexRepository,
+                                            flagStop);
+                                    task.fork();
+                                    allTasks.add(task);
+                                }
                             }
                         }
                     }
@@ -91,7 +102,6 @@ public class RecursiveIndexingTask extends RecursiveAction {
             for (RecursiveIndexingTask task : allTasks) {
                 task.join();
             }
-
         }
     }
     public boolean containsInDataBase(String link) {
@@ -116,25 +126,8 @@ public class RecursiveIndexingTask extends RecursiveAction {
         }
     }
 
-    public void savePage(String link) {
-
-        new PageIndexing(link, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
-
-//        try {
-//            Document doc2 = Jsoup.connect(link).get();
-//
-//            PageEntity pageEntity = new PageEntity();
-//
-//            pageEntity.setSite(siteEntity);
-//            pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
-//            pageEntity.setContent(doc2.outerHtml());
-//            pageEntity.setPath(link);
-//            pageRepository.save(pageEntity);
-//
-//
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
+    public void savePage(String url) {
+        new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
     }
 
 
@@ -146,4 +139,19 @@ public class RecursiveIndexingTask extends RecursiveAction {
 //        return codeHtlmBeforeCheck;
 //    }
 
+    private String deleteUrl(String url) {
+        int countLetters = siteEntity.getUrl().length() - 1;
+        return url.substring(countLetters);
+    }
+    private Map<String, Integer> getLemma(String url) {
+        Map<String, Integer> map = new HashMap<>();
+        try {
+            Document doc2 = Jsoup.connect(url).get();
+            LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
+            map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(doc2.outerHtml()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return map;
+    }
 }

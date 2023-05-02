@@ -44,7 +44,11 @@ public class SearchServiceImpl implements SearchService {
         //получаем список лемм-частота
         mapLemmaFrequency = getMapLemmaFrequency(query);
 
-        //удаление популярный лемм
+        for (String key : mapLemmaFrequency.keySet()) {
+            System.out.println("lemma<" + key + "> frequency<" + mapLemmaFrequency.get(key) +">");
+        }
+
+        //удаление популярных лемм
         mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
         //необходимо отсортировать по возрастанию частоты от самой маленькой
@@ -52,9 +56,10 @@ public class SearchServiceImpl implements SearchService {
 
         //=========================
 
+
         for (String key : mapLemmaFrequency.keySet()) {
 
-            System.out.println("слово: " + key + ", ч-та: " + mapLemmaFrequency.get(key));
+            System.out.println(key + " " + mapLemmaFrequency.get(key));
 
             int lemmaId = lemmaRepository.getLemmaId(key);
 
@@ -65,16 +70,11 @@ public class SearchServiceImpl implements SearchService {
             }
         }
 
-        if (pagesId.size() == 0) {
-            return new SearchErrorResponse("Совпадений не найдено");
-        }
-
-        int i = 1;
-        for (Integer pageId : pagesId) {
-            System.out.println(i + ". Страницы на которых есть все леммы: " + pageId);
-            i = i + 1;
-        }
-
+//        int i = 1;
+//        for (Integer pageId : pagesId) {
+//            System.out.println(i + ". Страницы на которых есть все леммы: " + pageId);
+//            i = i + 1;
+//        }
 
         //расчитать Ранк
         countRank(pagesId, mapLemmaFrequency);
@@ -157,6 +157,7 @@ public class SearchServiceImpl implements SearchService {
         return listPagesId;
     }
 
+
     private void searchForTheSamePages(List<Integer> list) {
 
         for (int i = 0; i < pagesId.size(); i++) {
@@ -167,14 +168,6 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
-//    private List<Integer> deletePages() {
-//
-//        for (int i = 0; i < pagesId.size(); i++) {
-//            pagesId.remove(i);
-//        }
-//        return pagesId;
-//    }
-
     private void countRank(List<Integer> list, Map<String, Integer> map) {
 
         float maxAbs = 0;
@@ -184,13 +177,11 @@ public class SearchServiceImpl implements SearchService {
 
 
         for (int i = 0; i < list.size(); i++) {
-            System.out.println("ID страницы - " + list.get(i));
             float abs = 0;
             //c каждой страницы брать количество лемм
             for (String key : map.keySet()) {
                 int lemmaId = lemmaRepository.getLemmaId(key);
                 float rank = indexRepository.getRankByLemmaIdAndPageId(lemmaId, list.get(i));
-                System.out.println(key + " rank (" + rank + ")" );
                 abs = abs + rank;
             }
 
@@ -198,13 +189,8 @@ public class SearchServiceImpl implements SearchService {
             abs = 0;
         }
 
-        for (Integer key : mapRankAbs.keySet()) {
-            System.out.println("pageID=" + key + " rank_abs=" + mapRankAbs.get(key));
-        }
-
         //найти максимальное значение rank
         maxAbs = maxAbs + Collections.max(mapRankAbs.values());
-        System.out.println("MAX abs = " + maxAbs);
 
         //заполняем коллекцию относительной релевантности
         for (Integer key : mapRankAbs.keySet()) {
@@ -214,16 +200,8 @@ public class SearchServiceImpl implements SearchService {
             mapRankRel.put(key, rel);
         }
 
-        System.out.println();
-
-        for (Integer key : mapRankRel.keySet()) {
-            System.out.println("pageID=" + key + " rank_rel=" + mapRankRel.get(key));
-        }
-
         //сортировка относительной релевантности
         mapRankRel = descendingSortRelevance(mapRankRel);
-
-        System.out.println();
 
         for (Integer key : mapRankRel.keySet()) {
             System.out.println("pageID=" + key + " rank_rel=" + mapRankRel.get(key));
@@ -234,10 +212,15 @@ public class SearchServiceImpl implements SearchService {
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
 
         //удаление слишком популярных лемм, например которые встречаются на всех страницах
+        //получаем кол-во страниц
+        int count = pageRepository.getCount();
+        //узнаем кол-во страниц в процентном отношении напрмер 80%
+        int maxCountLemma = (count * 80) / 100;
+
 
         Map<String, Integer> newMap = new HashMap<>();
         for (String key : map.keySet()) {
-            if (map.get(key) < 200) {
+            if (map.get(key) < maxCountLemma) {
                 newMap.put(key, map.get(key));
             }
         }

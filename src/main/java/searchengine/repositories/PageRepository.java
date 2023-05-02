@@ -26,4 +26,7 @@ public interface PageRepository extends CrudRepository<PageEntity, Integer> {
     String contains(String link);
     @Query(value = "SELECT id FROM page WHERE path LIKE %:url%", nativeQuery = true)
     int getId(String url);
+
+    @Query(value = "SELECT COUNT(*) FROM page", nativeQuery = true)
+    int getCount();
 }
