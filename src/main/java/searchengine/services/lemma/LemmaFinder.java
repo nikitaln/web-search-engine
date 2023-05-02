@@ -16,6 +16,8 @@ public class LemmaFinder {
     //Основной метод начало получения леммы слов из текста
     public Map<String, Integer> getLemmaMapWithParticles(String text) {
 
+        text = deleteHtmlTags(text);
+
         String[] words = arrayContainsRussianWords(text);
 
         Map<String, Integer> lemmas = new HashMap<>();

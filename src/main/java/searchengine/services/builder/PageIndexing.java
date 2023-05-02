@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 
 public class PageIndexing {
-    private Map<String, Integer> map;
     private String url;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
@@ -54,7 +53,7 @@ public class PageIndexing {
 
             if (statusCode < 400) {
                 pageEntity.setSite(siteEntity);
-                pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
+                pageEntity.setCodeHTTP(statusCode);
                 pageEntity.setContent(doc2.outerHtml());
                 pageEntity.setPath(url);
                 pageRepository.save(pageEntity);
@@ -74,14 +73,14 @@ public class PageIndexing {
 
             Map<String, Integer> map = new HashMap<>();
 
-            map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(codeHTML));
-
+//            map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(codeHTML));
+            map = lemmaFinder.getLemmaMapWithoutParticles(codeHTML);
 
             for (String key : map.keySet()) {
 
                 if (lemmaContainsOnDB(key)) {
 
-                    LemmaEntity lemmaEntity = lemmaRepository.findById(lemmaRepository.getLemmaId(key)).get();
+                    LemmaEntity lemmaEntity = lemmaRepository.getLemmaEntityByLemma(key);
                     lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
                     lemmaRepository.save(lemmaEntity);
                     saveIndex(map.get(key), lemmaEntity, pageEntity);

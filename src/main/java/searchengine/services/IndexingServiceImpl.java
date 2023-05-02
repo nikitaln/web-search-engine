@@ -78,16 +78,6 @@ public class IndexingServiceImpl implements IndexingService {
     public IndexingResponse stopIndexing() {
 
         System.out.println("Вошли в стоп");
-        //flagStop.stopRecursiveTask();
-//        if (siteRepository.findById(1).get().getStatus() == StatusType.INDEXING) {
-//            SiteEntity siteEntity = siteRepository.findById(1).get();
-//            flagStop.stopRecursiveTask();
-//            siteEntity.setStatus(StatusType.FAILED);
-//            siteEntity.setTime(LocalDateTime.now());
-//            siteEntity.setText("Остановка пользователем");
-//            siteRepository.save(siteEntity);
-//            return new IndexingResponse();
-//        }
 
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
@@ -102,10 +92,6 @@ public class IndexingServiceImpl implements IndexingService {
                 siteRepository.save(siteEntity);
                 return new IndexingResponse();
             }
-//            siteEntity.setStatus(StatusType.FAILED);
-//            siteEntity.setTime(LocalDateTime.now());
-//            siteEntity.setText("Остановка пользователем");
-//            siteRepository.save(siteEntity);
         }
 
         executorService.shutdown();
