@@ -29,4 +29,7 @@ public interface PageRepository extends CrudRepository<PageEntity, Integer> {
 
     @Query(value = "SELECT COUNT(*) FROM page", nativeQuery = true)
     int getCount();
+
+    @Query(value = "SELECT COUNT(*) FROM page WHERE site_id = :siteId", nativeQuery = true)
+    int getCountPagesBySiteId(int siteId);
 }
