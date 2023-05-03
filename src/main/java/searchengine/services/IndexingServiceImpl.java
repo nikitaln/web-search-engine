@@ -44,14 +44,15 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private ArrayList<SiteMapThread> threads = new ArrayList<>();
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
-    private FlagStop flagStop = new FlagStop();
+    private FlagStop flagStop;
 
     //метод запуска индексации сайта
     @Override
     public IndexingResponse startIndexing() {
+
+        flagStop = new FlagStop();
 
         List<Site> sitesList = sites.getSites();
 
@@ -61,12 +62,13 @@ public class IndexingServiceImpl implements IndexingService {
 
             if (siteContainsInDB(site.getUrl())) {
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
-                if (siteEntity.equals(StatusType.INDEXED)) {
-                    siteRepository.delete(siteEntity);
-                } else if (siteEntity.equals(StatusType.INDEXING)) {
+                if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
                     return new IndexingErrorResponse("Индексация уже запущена");
+                } else {
+                    siteRepository.delete(siteEntity);
                 }
             }
+
             executorService = Executors.newSingleThreadExecutor();
             siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
             executorService.execute(siteMapThread);
@@ -84,7 +86,7 @@ public class IndexingServiceImpl implements IndexingService {
         while (iterator.hasNext()) {
 
             SiteEntity siteEntity = iterator.next();
-            if (siteEntity.getStatus() == StatusType.INDEXING) {
+            if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
                 flagStop.stopRecursiveTask();
                 siteEntity.setStatus(StatusType.FAILED);
                 siteEntity.setTime(LocalDateTime.now());
@@ -102,6 +104,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse indexPage(String url) {
 
+        String url1 = "";
         EditorURL editorURL = new EditorURL();
         String siteUrl = editorURL.getSiteURL(url);
 
@@ -111,10 +114,13 @@ public class IndexingServiceImpl implements IndexingService {
             SiteEntity siteEntity = siteRepository.findById(siteRepository.getId(siteUrl)).get();
 
             //проверить наличие ссылки в Таблице page
-            if (pageContainsInDB(url)) {
-                deletePage(url);
+            int countLetters = siteEntity.getUrl().length() - 1;
+            url1 = url.substring(countLetters);
+
+            if (pageContainsInDB(url1)) {
+                deletePage(url1);
             }
-            new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
+            new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
 
             return new IndexingResponse();
 
@@ -138,7 +144,10 @@ public class IndexingServiceImpl implements IndexingService {
                     siteEntity.setStatus(StatusType.INDEXING);
                     siteRepository.save(siteEntity);
 
-                    PageIndexing pageIndexing = new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository);
+                    int countLetters = siteEntity.getUrl().length() - 1;
+                    url1 = url.substring(countLetters);
+
+                    PageIndexing pageIndexing = new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository);
                     pageIndexing.indexPage();
                 }
             }
@@ -165,11 +174,9 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private void deletePage(String url) {
-        String text = "https://www.playback.ru/catalog/1141.html";
 
-
-        if (text.equals(pageRepository.contains(text))) {
-            int pageId = pageRepository.getId(text);
+        if (url.equals(pageRepository.contains(url))) {
+            int pageId = pageRepository.getId(url);
 
             List<Integer> listLemmaId = new ArrayList<>();
 
@@ -224,4 +231,5 @@ public class IndexingServiceImpl implements IndexingService {
             Thread.currentThread().interrupt();
         }
     }
+
 }

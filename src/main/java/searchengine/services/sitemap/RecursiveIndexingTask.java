@@ -76,7 +76,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
 
                                 if (!containsInDataBase(newLink1)) {
 
-                                    savePage(newLink1);
+                                    new PageIndexing(newLink1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
                                     System.out.println("сохр. ссылку " + newLink1 + " | из потока " + Thread.currentThread().getName());
 
                                     RecursiveIndexingTask task = new RecursiveIndexingTask(

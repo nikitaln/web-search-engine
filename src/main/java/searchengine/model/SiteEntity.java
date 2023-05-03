@@ -16,7 +16,6 @@ public class SiteEntity {
     @Column(name = "status", nullable = true)
     @Enumerated(EnumType.STRING)
     private StatusType status;
-
     @Column(name = "status_time", columnDefinition = "DATETIME NOT NULL")
     private LocalDateTime time;
 
@@ -31,6 +30,9 @@ public class SiteEntity {
 
     @OneToMany(mappedBy = "siteEntity", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<PageEntity> indexEntityList = new ArrayList<>();
+
+    @OneToMany(mappedBy = "siteEntity", orphanRemoval = true, cascade = CascadeType.ALL)
+    private List<LemmaEntity> lemmaEntityList = new ArrayList<>();
 
     public int getId() {
         return id;
