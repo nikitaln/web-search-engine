@@ -8,13 +8,17 @@ import searchengine.dto.search.SearchDataResponse;
 import searchengine.dto.search.SearchErrorResponse;
 import searchengine.dto.search.SearchTotalResponse;
 import searchengine.model.LemmaEntity;
+import searchengine.model.PageEntity;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.services.lemma.LemmaFinder;
 
 import java.io.IOException;
+import java.security.KeyStore;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -45,39 +49,56 @@ public class SearchServiceImpl implements SearchService {
         mapLemmaFrequency = getMapLemmaFrequency(query);
 
         for (String key : mapLemmaFrequency.keySet()) {
-            System.out.println("lemma<" + key + "> frequency<" + mapLemmaFrequency.get(key) +">");
+            System.out.println("лемма: " + key + " | частота: " + mapLemmaFrequency.get(key));
         }
 
         //удаление популярных лемм
-        mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
+        //mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
         //необходимо отсортировать по возрастанию частоты от самой маленькой
+        System.out.println("\tсортировка по частоте");
         mapLemmaFrequency = ascendingSortByValue(mapLemmaFrequency);
-
-        //=========================
-
 
         for (String key : mapLemmaFrequency.keySet()) {
 
-            System.out.println(key + " " + mapLemmaFrequency.get(key));
+            System.out.println("лемма: " + key + " | частота: " + mapLemmaFrequency.get(key));
 
             int lemmaId = lemmaRepository.getLemmaId(key);
 
+            //добавляем ид страниц в коллекцию
             if (pagesId.size() == 0) {
+                //все страницы на которых встречается данная лемма
                 pagesId = getAllPagesId(lemmaId);
             } else {
+                //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
                 searchForTheSamePages(getAllPagesId(lemmaId));
             }
         }
 
-//        int i = 1;
-//        for (Integer pageId : pagesId) {
-//            System.out.println(i + ". Страницы на которых есть все леммы: " + pageId);
-//            i = i + 1;
-//        }
+        int i = 1;
+        for (Integer pageId : pagesId) {
+            System.out.println(i + ". Страницы на которых есть все леммы: page ID: " + pageId);
+            i = i + 1;
+        }
 
         //расчитать Ранк
-        countRank(pagesId, mapLemmaFrequency);
+        Map<Integer, Float> mapRel = countRank(pagesId, mapLemmaFrequency);
+
+        for (Integer key : mapRel.keySet()) {
+            //System.out.println("page ID: " + key + " | Rank rel: " + mapRel.get(key));
+
+            PageEntity pageEntity = pageRepository.findById(key).get();
+
+            SearchDataResponse data = new SearchDataResponse();
+            data.setRelevance(mapRel.get(key));
+            data.setUrl(pageEntity.getPath());
+
+            data.setSnippet(searchSnippet(pageEntity.getContent(), query));
+            data.setTitle("Касса билетов");
+            data.setSite(pageEntity.getSite().getUrl());
+            data.setSiteName(pageEntity.getSite().getNameSite());
+        }
+
 
         SearchDataResponse data = new SearchDataResponse();
 
@@ -105,7 +126,6 @@ public class SearchServiceImpl implements SearchService {
         searchTotalResponse.setCount(530);
         searchTotalResponse.setResult(true);
         searchTotalResponse.setData(list);
-
 
         return searchTotalResponse;
     }
@@ -168,7 +188,7 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
-    private void countRank(List<Integer> list, Map<String, Integer> map) {
+    private Map<Integer, Float> countRank(List<Integer> list, Map<String, Integer> map) {
 
         float maxAbs = 0;
         //id страницы и абсолютная релевантность
@@ -194,9 +214,7 @@ public class SearchServiceImpl implements SearchService {
 
         //заполняем коллекцию относительной релевантности
         for (Integer key : mapRankAbs.keySet()) {
-            System.out.println("ранк абс-" + mapRankAbs.get(key) + " max-" + maxAbs);
             float rel = (mapRankAbs.get(key) / maxAbs);
-            System.out.println("рел = " + rel);
             mapRankRel.put(key, rel);
         }
 
@@ -204,9 +222,10 @@ public class SearchServiceImpl implements SearchService {
         mapRankRel = descendingSortRelevance(mapRankRel);
 
         for (Integer key : mapRankRel.keySet()) {
-            System.out.println("pageID=" + key + " rank_rel=" + mapRankRel.get(key));
+            System.out.println("page ID: " + key + " | Rank rel: " + mapRankRel.get(key));
         }
 
+        return mapRankRel;
     }
 
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
@@ -229,16 +248,38 @@ public class SearchServiceImpl implements SearchService {
 
     private Map<Integer, Float> descendingSortRelevance(Map<Integer, Float> map) {
 
-        map = map.entrySet().stream()
-                .sorted(Comparator.comparingInt(value -> (int) -value.getValue()))
+        Map<Integer, Float> result = map.entrySet()
+                .stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        (a, b) -> { throw new AssertionError(); },
-                        LinkedHashMap::new
-                ));
-
-        return map;
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        return result;
     }
 
+    //получили html код страницы и нужно его пропарсить
+    private String searchSnippet(String html, String query) {
+
+        String[] arrayWords = query.split(" ");
+
+        String regex = "[^А-Яа-я\\s]";
+        String htmlWithoutTags = html.replaceAll(regex, "");
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+
+        for (int i = 0; i < arrayWords.length; i++) {
+            String wordQuery = arrayWords[i];
+            Pattern pattern = Pattern.compile(wordQuery);
+            Matcher matcher = pattern.matcher(htmlWithoutTags);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                System.out.println(htmlWithoutTags.substring(start, end));
+            }
+        }
+
+        return null;
+    }
 }
