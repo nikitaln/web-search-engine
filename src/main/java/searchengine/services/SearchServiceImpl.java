@@ -9,9 +9,11 @@ import searchengine.dto.search.SearchErrorResponse;
 import searchengine.dto.search.SearchTotalResponse;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
+import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
 
 import java.io.IOException;
@@ -35,6 +37,7 @@ public class SearchServiceImpl implements SearchService {
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
+    private final SiteRepository siteRepository;
     private List<Integer> pagesId = new ArrayList<>();
     private List<SearchTotalResponse> totalResponse = new ArrayList<>();
     private int control = 0;
@@ -84,46 +87,28 @@ public class SearchServiceImpl implements SearchService {
         //расчитать Ранк
         Map<Integer, Float> mapRel = countRank(pagesId, mapLemmaFrequency);
 
+        List<SearchDataResponse> list = new ArrayList<>();
+
         for (Integer key : mapRel.keySet()) {
             //System.out.println("page ID: " + key + " | Rank rel: " + mapRel.get(key));
 
             PageEntity pageEntity = pageRepository.findById(key).get();
+            SiteEntity siteEntity = pageEntity.getSite();
 
             SearchDataResponse data = new SearchDataResponse();
             data.setRelevance(mapRel.get(key));
-            data.setUrl(pageEntity.getPath());
+            data.setUri(pageEntity.getPath());
 
             data.setSnippet(searchSnippet(pageEntity.getContent(), query));
-            data.setTitle("Касса билетов");
-            data.setSite(pageEntity.getSite().getUrl());
+            data.setTitle("Загаловок страницы - требует доработки");
+            data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
             data.setSiteName(pageEntity.getSite().getNameSite());
+
+            list.add(data);
         }
 
-
-        SearchDataResponse data = new SearchDataResponse();
-
-        data.setRelevance(0.6);
-        data.setUrl("/tickets/concert");
-        data.setSnippet("Концерт пройдет на стадионе <b>Олимпийкий</b>, где будет много народу");
-        data.setTitle("Касса билетов");
-        data.setSite("http://www.site.com");
-        data.setSiteName("kassir.ru");
-
-        SearchDataResponse data1 = new SearchDataResponse();
-
-        data1.setRelevance(0.6);
-        data1.setUrl("/tickets/concert");
-        data1.setSnippet("Концерт пройдет на стадионе <b>Олимпийкий</b>, где будет много народу");
-        data1.setTitle("Касса билетов");
-        data1.setSite("http://www.site.com");
-        data1.setSiteName("kassir.ru");
-
-        List<SearchDataResponse> list = new ArrayList<>();
-        list.add(data);
-        list.add(data1);
-
         SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
-        searchTotalResponse.setCount(530);
+        searchTotalResponse.setCount(list.size());
         searchTotalResponse.setResult(true);
         searchTotalResponse.setData(list);
 
@@ -276,10 +261,13 @@ public class SearchServiceImpl implements SearchService {
             while (matcher.find()) {
                 int start = matcher.start();
                 int end = matcher.end();
-                System.out.println(htmlWithoutTags.substring(start, end));
+                //System.out.println(htmlWithoutTags.substring(start - 100, end + 100));
+                stringBuilder.append(htmlWithoutTags.substring(start - 50, start - 1) + "<b> ");
+                stringBuilder.append(htmlWithoutTags.substring(start, end) + "</b> ");
+                stringBuilder.append(htmlWithoutTags.substring(end + 1, end + 5));
             }
         }
 
-        return null;
+        return stringBuilder.toString();
     }
 }
