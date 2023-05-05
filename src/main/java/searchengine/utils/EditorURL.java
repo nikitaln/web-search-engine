@@ -41,4 +41,18 @@ public class EditorURL {
         String newUrl = url.substring(site.length()-1);
         System.out.println(newUrl);
     }
+
+    public void getTitleFromHtmlCode(String html) {
+
+        System.out.println("Зашли в метод");
+
+        String regex = "<title>([^<>]+)</title>";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(html);
+        while (matcher.find()) {
+            String citation = matcher.group(1);
+            System.out.println(citation);
+        }
+    }
 }

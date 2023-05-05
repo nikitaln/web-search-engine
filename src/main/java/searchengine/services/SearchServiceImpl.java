@@ -100,7 +100,7 @@ public class SearchServiceImpl implements SearchService {
             data.setUri(pageEntity.getPath());
 
             data.setSnippet(searchSnippet(pageEntity.getContent(), query));
-            data.setTitle("Загаловок страницы - требует доработки");
+            data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
             data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
             data.setSiteName(pageEntity.getSite().getNameSite());
 
@@ -269,5 +269,22 @@ public class SearchServiceImpl implements SearchService {
         }
 
         return stringBuilder.toString();
+    }
+
+    public String getTitleFromHtmlCode(String html) {
+
+        System.out.println("Зашли в метод");
+
+        String regex = "<title>([^<>]+)</title>";
+        String citation = "";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(html);
+        while (matcher.find()) {
+            citation = matcher.group(1);
+//            System.out.println(citation);
+//            return citation;
+        }
+        return citation;
     }
 }
