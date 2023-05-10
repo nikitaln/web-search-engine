@@ -40,7 +40,7 @@ public class SearchServiceImpl implements SearchService {
     private final SiteRepository siteRepository;
     private List<Integer> pagesId = new ArrayList<>();
     private List<SearchTotalResponse> totalResponse = new ArrayList<>();
-    private int control = 0;
+    //private int control = 0;
 
     @Override
     public SearchTotalResponse searchInformation(String query) {
@@ -253,20 +253,33 @@ public class SearchServiceImpl implements SearchService {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-
-        for (int i = 0; i < arrayWords.length; i++) {
-            String wordQuery = arrayWords[i];
-            Pattern pattern = Pattern.compile(wordQuery);
-            Matcher matcher = pattern.matcher(htmlWithoutTags);
-            while (matcher.find()) {
-                int start = matcher.start();
-                int end = matcher.end();
-                //System.out.println(htmlWithoutTags.substring(start - 100, end + 100));
-                stringBuilder.append(htmlWithoutTags.substring(start - 50, start - 1) + "<b> ");
-                stringBuilder.append(htmlWithoutTags.substring(start, end) + "</b> ");
-                stringBuilder.append(htmlWithoutTags.substring(end + 1, end + 5));
-            }
+        //поиск целого запроса на данной странице
+        Pattern pattern = Pattern.compile(query);
+        Matcher matcher = pattern.matcher(htmlWithoutTags);
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            //System.out.println(htmlWithoutTags.substring(start - 100, end + 100));
+            stringBuilder.append("<b>");
+            stringBuilder.append(htmlWithoutTags.substring(start, end) + "</b> ");
+            stringBuilder.append(htmlWithoutTags.substring(end + 1, end + 50));
         }
+
+
+
+//        for (int i = 0; i < arrayWords.length; i++) {
+//            String wordQuery = arrayWords[i];
+//            Pattern pattern = Pattern.compile(wordQuery);
+//            Matcher matcher = pattern.matcher(htmlWithoutTags);
+//            while (matcher.find()) {
+//                int start = matcher.start();
+//                int end = matcher.end();
+//                //System.out.println(htmlWithoutTags.substring(start - 100, end + 100));
+//                stringBuilder.append(htmlWithoutTags.substring(start - 50, start - 1) + "<b> ");
+//                stringBuilder.append(htmlWithoutTags.substring(start, end) + "</b> ");
+//                stringBuilder.append(htmlWithoutTags.substring(end + 1, end + 5));
+//            }
+//        }
 
         return stringBuilder.toString();
     }

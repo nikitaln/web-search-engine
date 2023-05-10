@@ -1603,6 +1603,7 @@ var API = function(){
                                 break;
                             
                         }
+
                         $('select[name="site"]').append('' +
                             '<option value="' + site.url + '">' +
                                 site.url +

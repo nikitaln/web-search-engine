@@ -68,6 +68,8 @@ public class PageIndexing {
 
     private void saveLemma(String codeHTML, PageEntity pageEntity) {
 
+        long start = System.currentTimeMillis();
+
         try {
             LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
 
@@ -96,16 +98,19 @@ public class PageIndexing {
                 }
             }
 
+            long finish = System.currentTimeMillis() - start;
+
+            System.out.println("\tдлительность операции с леммами - " + finish + " мс.");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
     private boolean lemmaContainsOnDB(String word) {
+
         if (word.equals(lemmaRepository.contains(word))) {
             return true;
-        } else {
-            return false;
-        }
+        } else return false;
     }
 
     private void saveIndex(int countWord, LemmaEntity lemmaEntity, PageEntity pageEntity) {
