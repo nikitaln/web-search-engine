@@ -120,7 +120,7 @@ public class IndexingServiceImpl implements IndexingService {
             if (pageContainsInDB(url1)) {
                 deletePage(url1);
             }
-            new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
+//            new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
 
             return new IndexingResponse();
 
@@ -147,8 +147,8 @@ public class IndexingServiceImpl implements IndexingService {
                     int countLetters = siteEntity.getUrl().length() - 1;
                     url1 = url.substring(countLetters);
 
-                    PageIndexing pageIndexing = new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository);
-                    pageIndexing.indexPage();
+//                    PageIndexing pageIndexing = new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository);
+//                    pageIndexing.indexPage();
                 }
             }
             return new IndexingResponse();

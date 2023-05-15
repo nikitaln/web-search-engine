@@ -20,8 +20,8 @@ public class SiteMapThread implements Runnable {
     private IndexRepository indexRepository;
     private ForkJoinPool fjp;
     private FlagStop flagStop;
-
     RecursiveIndexingTask recursiveIndexingTask;
+    private Storage storage = new Storage();
 
     public SiteMapThread(Site site, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop) {
         this.site = site;
@@ -34,6 +34,8 @@ public class SiteMapThread implements Runnable {
 
     @Override
     public void run() {
+
+
 
         //создали сущность site для вставки в БД
         SiteEntity siteEntity = new SiteEntity();
@@ -51,7 +53,7 @@ public class SiteMapThread implements Runnable {
         System.out.println("Поток <" + Thread.currentThread().getName() + "> индексирует сайт - " + site.getName());
 
         //запускаем индексацию при помощи fork-join
-        recursiveIndexingTask = new RecursiveIndexingTask(siteEntity.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
+        recursiveIndexingTask = new RecursiveIndexingTask(siteEntity.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, storage);
 
         fjp = new ForkJoinPool();
         fjp.invoke(recursiveIndexingTask);

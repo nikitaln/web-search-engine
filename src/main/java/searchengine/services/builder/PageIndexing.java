@@ -12,13 +12,11 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
+import searchengine.services.sitemap.Storage;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class PageIndexing {
     private String url;
@@ -27,14 +25,16 @@ public class PageIndexing {
     private PageRepository pageRepository;
     private LemmaRepository lemmaRepository;
     private IndexRepository indexRepository;
+    private Storage storage;
 
-    public PageIndexing(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository) {
+    public PageIndexing(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, Storage storage) {
         this.url = url;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
         this.indexRepository = indexRepository;
+        this.storage = storage;
     }
 
     public void indexPage() {
@@ -78,25 +78,90 @@ public class PageIndexing {
 //            map = lemmaFinder.getLemmaMapWithoutParticles(lemmaFinder.deleteHtmlTags(codeHTML));
             map = lemmaFinder.getLemmaMapWithoutParticles(codeHTML);
 
+            Set<LemmaEntity> lemmas = new HashSet<>();
+            Set<IndexEntity> indexes = new HashSet<>();
+
+            Map<String, Integer> mapLemmas = new HashMap<>();
+
+            //========TESTING CODE=========
+
             for (String key : map.keySet()) {
 
-                if (lemmaContainsOnDB(key)) {
+                if (storage.lemmas.containsKey(key)) {
 
-                    LemmaEntity lemmaEntity = lemmaRepository.getLemmaEntityByLemma(key);
-                    lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
-                    lemmaRepository.save(lemmaEntity);
-                    saveIndex(map.get(key), lemmaEntity, pageEntity);
+                    LemmaEntity lemmaEntity = storage.lemmas.get(key);
+                    int count = lemmaEntity.getFrequency();
+                    lemmaEntity.setFrequency(count + 1);
+                    //====== процессе
+
+                    storage.lemmas.put(key, lemmaEntity);
+
+                    IndexEntity indexEntity = new IndexEntity();
+                    indexEntity.setLemmaEntity(lemmaEntity);
+                    indexEntity.setPageEntity(pageEntity);
+                    indexEntity.setRank(map.get(key));
+
+                    indexes.add(indexEntity);
 
                 } else {
 
+                    int count2 = 1;
+                    storage.addLemma(key, count2);
+
                     LemmaEntity lemmaEntity = new LemmaEntity();
                     lemmaEntity.setLemma(key);
-                    lemmaEntity.setFrequency(1);
+                    lemmaEntity.setFrequency(count2);
                     lemmaEntity.setSiteEntity(siteEntity);
-                    lemmaRepository.save(lemmaEntity);
-                    saveIndex(map.get(key), lemmaEntity, pageEntity);
+
+                    storage.lemmas.put(key, lemmaEntity);
+
+                    IndexEntity indexEntity = new IndexEntity();
+                    indexEntity.setLemmaEntity(lemmaEntity);
+                    indexEntity.setPageEntity(pageEntity);
+                    indexEntity.setRank(map.get(key));
+
+                    indexes.add(indexEntity);
+
                 }
             }
+
+            for (String key : storage.lemmas.keySet()) {
+                lemmas.add(storage.lemmas.get(key));
+            }
+
+
+            lemmaRepository.saveAll(lemmas);
+            indexRepository.saveAll(indexes);
+
+            //=======TESTING END===========
+
+
+
+
+
+
+
+
+//            for (String key : map.keySet()) {
+//
+//                if (lemmaContainsOnDB(key)) {
+//
+//                    LemmaEntity lemmaEntity = lemmaRepository.getLemmaEntityByLemma(key);
+//                    lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
+//                    lemmaRepository.save(lemmaEntity);
+//                    saveIndex(map.get(key), lemmaEntity, pageEntity);
+//
+//
+//                } else {
+//
+//                    LemmaEntity lemmaEntity = new LemmaEntity();
+//                    lemmaEntity.setLemma(key);
+//                    lemmaEntity.setFrequency(1);
+//                    lemmaEntity.setSiteEntity(siteEntity);
+//                    lemmaRepository.save(lemmaEntity);
+//                    saveIndex(map.get(key), lemmaEntity, pageEntity);
+//                }
+//            }
 
             long finish = System.currentTimeMillis() - start;
 

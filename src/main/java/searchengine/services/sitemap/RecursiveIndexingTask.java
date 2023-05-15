@@ -35,14 +35,9 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private LemmaRepository lemmaRepository;
     private IndexRepository indexRepository;
     private FlagStop flagStop;
+    private Storage storage;
 
-    public RecursiveIndexingTask(String link,
-                                 SiteEntity siteEntity,
-                                 SiteRepository siteRepository,
-                                 PageRepository pageRepository,
-                                 LemmaRepository lemmaRepository,
-                                 IndexRepository indexRepository,
-                                 FlagStop flagStop) {
+    public RecursiveIndexingTask(String link, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop, Storage storage) {
         this.link = link;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
@@ -50,6 +45,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
         this.lemmaRepository = lemmaRepository;
         this.indexRepository = indexRepository;
         this.flagStop = flagStop;
+        this.storage = storage;
     }
 
     @Override
@@ -71,12 +67,15 @@ public class RecursiveIndexingTask extends RecursiveAction {
                         String newLink = element.absUrl("href");
 
                         if (isDomainUrl(newLink)) {
+
+                            //получили ссылку без сайта
                             String newLink1 = deleteUrl(newLink);
+
                             synchronized (pageRepository) {
 
                                 if (!containsInDataBase(newLink1)) {
 
-                                    new PageIndexing(newLink1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
+                                    new PageIndexing(newLink1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
                                     System.out.println("сохр. ссылку " + newLink1 + " | из потока " + Thread.currentThread().getName());
 
                                     RecursiveIndexingTask task = new RecursiveIndexingTask(
@@ -86,7 +85,8 @@ public class RecursiveIndexingTask extends RecursiveAction {
                                             pageRepository,
                                             lemmaRepository,
                                             indexRepository,
-                                            flagStop);
+                                            flagStop,
+                                            storage);
                                     task.fork();
                                     allTasks.add(task);
                                 }
@@ -102,6 +102,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
             }
         }
     }
+
     public boolean containsInDataBase(String link) {
         if (link.equals(pageRepository.contains(link))) {
             return true;
@@ -125,7 +126,23 @@ public class RecursiveIndexingTask extends RecursiveAction {
     }
 
     public void savePage(String url) {
-        new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
+
+        synchronized (pageRepository) {
+            if (!containsInDataBase(url)) {
+                PageEntity pageEntity = new PageEntity();
+                pageEntity.setSite(siteEntity);
+                pageEntity.setPath(url);
+                pageEntity.setContent("html");
+                pageEntity.setCodeHTTP(200);
+                System.out.println("добавили: " + url);
+
+                pageRepository.save(pageEntity);
+
+            }
+        }
+
+
+//        new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
     }
 
     private String deleteUrl(String url) {
