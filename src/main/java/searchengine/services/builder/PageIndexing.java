@@ -92,7 +92,6 @@ public class PageIndexing {
                     LemmaEntity lemmaEntity = storage.lemmas.get(key);
                     int count = lemmaEntity.getFrequency();
                     lemmaEntity.setFrequency(count + 1);
-                    //====== процессе
 
                     storage.lemmas.put(key, lemmaEntity);
 
@@ -135,34 +134,6 @@ public class PageIndexing {
 
             //=======TESTING END===========
 
-
-
-
-
-
-
-
-//            for (String key : map.keySet()) {
-//
-//                if (lemmaContainsOnDB(key)) {
-//
-//                    LemmaEntity lemmaEntity = lemmaRepository.getLemmaEntityByLemma(key);
-//                    lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
-//                    lemmaRepository.save(lemmaEntity);
-//                    saveIndex(map.get(key), lemmaEntity, pageEntity);
-//
-//
-//                } else {
-//
-//                    LemmaEntity lemmaEntity = new LemmaEntity();
-//                    lemmaEntity.setLemma(key);
-//                    lemmaEntity.setFrequency(1);
-//                    lemmaEntity.setSiteEntity(siteEntity);
-//                    lemmaRepository.save(lemmaEntity);
-//                    saveIndex(map.get(key), lemmaEntity, pageEntity);
-//                }
-//            }
-
             long finish = System.currentTimeMillis() - start;
 
             System.out.println("\tдлительность операции с леммами - " + finish + " мс.");
@@ -170,12 +141,6 @@ public class PageIndexing {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-    private boolean lemmaContainsOnDB(String word) {
-
-        if (word.equals(lemmaRepository.contains(word))) {
-            return true;
-        } else return false;
     }
 
     private void saveIndex(int countWord, LemmaEntity lemmaEntity, PageEntity pageEntity) {

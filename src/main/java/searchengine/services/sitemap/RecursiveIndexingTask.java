@@ -124,27 +124,6 @@ public class RecursiveIndexingTask extends RecursiveAction {
             return false;
         }
     }
-
-    public void savePage(String url) {
-
-        synchronized (pageRepository) {
-            if (!containsInDataBase(url)) {
-                PageEntity pageEntity = new PageEntity();
-                pageEntity.setSite(siteEntity);
-                pageEntity.setPath(url);
-                pageEntity.setContent("html");
-                pageEntity.setCodeHTTP(200);
-                System.out.println("добавили: " + url);
-
-                pageRepository.save(pageEntity);
-
-            }
-        }
-
-
-//        new PageIndexing(url, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
-    }
-
     private String deleteUrl(String url) {
         int countLetters = siteEntity.getUrl().length() - 1;
         return url.substring(countLetters);

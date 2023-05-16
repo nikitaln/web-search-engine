@@ -43,11 +43,23 @@ public class SearchServiceImpl implements SearchService {
     //private int control = 0;
 
     @Override
-    public SearchTotalResponse searchInformation(String query) {
+    public SearchTotalResponse searchInformation(String site, String query) {
+
+//        if (!site.equals(null)) {
+//
+//
+//
+//
+//        }
+
+
+
+
         //очищаем список страниц
         pagesId.clear();
 
         Map<String, Integer> mapLemmaFrequency = new HashMap<>();
+
         //получаем список лемм-частота
         mapLemmaFrequency = getMapLemmaFrequency(query);
 
@@ -56,27 +68,21 @@ public class SearchServiceImpl implements SearchService {
         }
 
         //удаление популярных лемм
-        //mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
+        mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
         //необходимо отсортировать по возрастанию частоты от самой маленькой
         System.out.println("\tсортировка по частоте");
+
         mapLemmaFrequency = ascendingSortByValue(mapLemmaFrequency);
 
-        for (String key : mapLemmaFrequency.keySet()) {
+//FIXING===============================================================================================================
 
-            System.out.println("лемма: " + key + " | частота: " + mapLemmaFrequency.get(key));
+        //по самому редкому слову-лемме находим все страницы на которых оно встречается
+        //создаем список страниц на основе списка страниц с самой редкой леммой
+        //поиск страниц где встречаются все леммы-слова из запроса
 
-            int lemmaId = lemmaRepository.getLemmaId(key);
-
-            //добавляем ид страниц в коллекцию
-            if (pagesId.size() == 0) {
-                //все страницы на которых встречается данная лемма
-                pagesId = getAllPagesId(lemmaId);
-            } else {
-                //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
-                searchForTheSamePages(getAllPagesId(lemmaId));
-            }
-        }
+        //список страниц на которых есть все леммы из запроса
+        pagesId = searchPagesWithEachLemma(mapLemmaFrequency);
 
         int i = 1;
         for (Integer pageId : pagesId) {
@@ -113,6 +119,28 @@ public class SearchServiceImpl implements SearchService {
         searchTotalResponse.setData(list);
 
         return searchTotalResponse;
+    }
+
+    private List<Integer> searchPagesWithEachLemma(Map<String, Integer> map) {
+
+        List<Integer> pagesId = new ArrayList<>();
+
+        for (String key : map.keySet()) {
+
+            System.out.println("лемма: " + key + " | частота: " + map.get(key));
+
+            int lemmaId = lemmaRepository.getLemmaId(key);
+
+            //добавляем ид страниц в коллекцию
+            if (pagesId.size() == 0) {
+                //все страницы на которых встречается данная лемма
+                pagesId = getAllPagesId(lemmaId);
+            } else {
+                //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
+                searchForTheSamePages(getAllPagesId(lemmaId));
+            }
+        }
+        return pagesId;
     }
 
     //получение списка уникальных лемм и их частоты
@@ -215,20 +243,19 @@ public class SearchServiceImpl implements SearchService {
 
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
 
+        Map<String, Integer> mapRareLemmas = new HashMap<>();
+
         //удаление слишком популярных лемм, например которые встречаются на всех страницах
         //получаем кол-во страниц
-        int count = pageRepository.getCount();
-        //узнаем кол-во страниц в процентном отношении напрмер 80%
-        int maxCountLemma = (count * 80) / 100;
+        int countPages = pageRepository.getCount();
 
-
-        Map<String, Integer> newMap = new HashMap<>();
         for (String key : map.keySet()) {
-            if (map.get(key) < maxCountLemma) {
-                newMap.put(key, map.get(key));
+
+            if (map.get(key) < countPages) {
+                mapRareLemmas.put(key, map.get(key));
             }
         }
-        return newMap;
+        return mapRareLemmas;
     }
 
     private Map<Integer, Float> descendingSortRelevance(Map<Integer, Float> map) {
