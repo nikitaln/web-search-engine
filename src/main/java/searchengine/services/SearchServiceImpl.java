@@ -68,7 +68,7 @@ public class SearchServiceImpl implements SearchService {
         }
 
         //удаление популярных лемм
-        mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
+        //mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
         //необходимо отсортировать по возрастанию частоты от самой маленькой
         System.out.println("\tсортировка по частоте");
@@ -289,7 +289,8 @@ public class SearchServiceImpl implements SearchService {
             //System.out.println(htmlWithoutTags.substring(start - 100, end + 100));
             stringBuilder.append("<b>");
             stringBuilder.append(htmlWithoutTags.substring(start, end) + "</b> ");
-            stringBuilder.append(htmlWithoutTags.substring(end + 1, end + 50));
+            stringBuilder.append(htmlWithoutTags.substring(end + 1, end + 200));
+            stringBuilder.append("...");
         }
 
 

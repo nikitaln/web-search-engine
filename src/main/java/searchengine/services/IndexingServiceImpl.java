@@ -108,7 +108,8 @@ public class IndexingServiceImpl implements IndexingService {
         //проверить наличие сайта в БД
         if (siteContainsInDB(siteUrl)) {
 
-            SiteEntity siteEntity = siteRepository.findById(siteRepository.getId(siteUrl)).get();
+            //SiteEntity siteEntity = siteRepository.findById(siteRepository.getId(siteUrl)).get();
+            SiteEntity siteEntity = siteRepository.getByUrl(siteUrl);
 
             //проверить наличие ссылки в Таблице page
             int countLetters = siteEntity.getUrl().length() - 1;

@@ -57,6 +57,7 @@ public class SiteMapThread implements Runnable {
 
         fjp = new ForkJoinPool();
         fjp.invoke(recursiveIndexingTask);
+        fjp.shutdown();
 
         System.out.println("Конец");
     }
