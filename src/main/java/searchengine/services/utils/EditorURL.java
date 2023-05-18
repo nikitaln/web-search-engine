@@ -1,4 +1,4 @@
-package searchengine.utils;
+package searchengine.services.utils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +48,24 @@ public class EditorURL {
         while (matcher.find()) {
             String citation = matcher.group(1);
             System.out.println(citation);
+        }
+    }
+
+    public void containsSite(String url) {
+
+        String[] array = new String[2];
+        array[0] = "https://dombulgakova1.ru/";
+        array[1] = "https://dombulgakova.ru/";
+
+        for (int i = 0; i < array.length; i++) {
+
+            Pattern pattern = Pattern.compile(array[i]);
+            Matcher matcher = pattern.matcher(url);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                System.out.println(url.substring(start, end));
+            }
         }
     }
 }

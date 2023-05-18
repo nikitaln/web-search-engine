@@ -35,8 +35,6 @@ public class SiteMapThread implements Runnable {
     @Override
     public void run() {
 
-
-
         //создали сущность site для вставки в БД
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setNameSite(site.getName());

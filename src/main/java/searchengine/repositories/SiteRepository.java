@@ -28,5 +28,7 @@ public interface SiteRepository extends CrudRepository<SiteEntity, Integer> {
     int getId(String url);
 
     SiteEntity getByUrl(String url);
+    @Query(value = "SELECT COUNT(*) FROM site", nativeQuery = true)
+    int getCount();
 
 }

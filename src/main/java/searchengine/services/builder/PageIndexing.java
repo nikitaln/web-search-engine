@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 public class PageIndexing {
-    private String url;
+    private String uri;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
@@ -27,8 +27,8 @@ public class PageIndexing {
     private IndexRepository indexRepository;
     private Storage storage;
 
-    public PageIndexing(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, Storage storage) {
-        this.url = url;
+    public PageIndexing(String uri, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, Storage storage) {
+        this.uri = uri;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
@@ -42,20 +42,21 @@ public class PageIndexing {
         siteEntity.setTime(LocalDateTime.now());
         siteRepository.save(siteEntity);
 
-        String url2 = siteEntity.getUrl() + url.substring(1);
+        String fullUrl = siteEntity.getUrl() + uri.substring(1);
 
         try {
-            Document doc2 = Jsoup.connect(url2).get();
+            Document doc2 = Jsoup.connect(fullUrl).get();
 
             PageEntity pageEntity = new PageEntity();
 
             int statusCode = doc2.connection().response().statusCode();
 
             if (statusCode < 400) {
+
                 pageEntity.setSite(siteEntity);
                 pageEntity.setCodeHTTP(statusCode);
                 pageEntity.setContent(doc2.outerHtml());
-                pageEntity.setPath(url);
+                pageEntity.setPath(uri);
                 pageRepository.save(pageEntity);
 
                 saveLemma(doc2.outerHtml(), pageEntity);
@@ -127,7 +128,6 @@ public class PageIndexing {
             for (String key : storage.lemmas.keySet()) {
                 lemmas.add(storage.lemmas.get(key));
             }
-
 
             lemmaRepository.saveAll(lemmas);
             indexRepository.saveAll(indexes);

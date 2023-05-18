@@ -16,16 +16,18 @@ import searchengine.repositories.SiteRepository;
 import searchengine.services.builder.PageIndexing;
 import searchengine.services.sitemap.FlagStop;
 import searchengine.services.sitemap.SiteMapThread;
-import searchengine.utils.EditorURL;
+import searchengine.services.sitemap.Storage;
+import searchengine.services.utils.EditorURL;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @Service - анотация Spring, показывает, что наш класс является сервисом,
@@ -58,12 +60,14 @@ public class IndexingServiceImpl implements IndexingService {
         for (int i = 0; i < sitesList.size(); i++) {
 
             Site site = sitesList.get(i);
-
             if (siteContainsInDB(site.getUrl())) {
+
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
                 if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
+
                     return new IndexingErrorResponse("Индексация уже запущена");
                 } else {
+
                     siteRepository.delete(siteEntity);
                 }
             }
@@ -101,29 +105,39 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse indexPage(String url) {
 
-        String url1 = "";
+        // url - https://www.playback.ru/catalog/1141.html
+        // uri - /catalog/1141.html
+        String uri = "";
         EditorURL editorURL = new EditorURL();
-        String siteUrl = editorURL.getSiteURL(url);
+        // siteUrl - https://www.playback.ru/
+        //String siteUrl = editorURL.getSiteURL(url);
 
         //проверить наличие сайта в БД
-        if (siteContainsInDB(siteUrl)) {
+        if (siteContainsInDB(url)) {
 
-            //SiteEntity siteEntity = siteRepository.findById(siteRepository.getId(siteUrl)).get();
-            SiteEntity siteEntity = siteRepository.getByUrl(siteUrl);
+            System.out.println("Сайт в БД");
+            SiteEntity siteEntity = siteRepository.getByUrl(url);
 
             //проверить наличие ссылки в Таблице page
             int countLetters = siteEntity.getUrl().length() - 1;
-            url1 = url.substring(countLetters);
+            uri = url.substring(countLetters);
 
-            if (pageContainsInDB(url1)) {
-                deletePage(url1);
+            if (pageContainsInDB(uri)) {
+                deletePage(uri);
             }
-//            new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository).indexPage();
+
+            Storage storage = new Storage();
+
+            new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
 
             return new IndexingResponse();
 
             //проверка наличие сайта в конфиге
-        } else if (siteInConfig(siteUrl)) {
+        } else if (siteInConfig(url)) {
+
+            System.out.println("Сайт в консоли");
+            String siteUrl = getSiteUrl(url);
+            System.out.println("- " + siteUrl);
 
             List<Site> sitesList = sites.getSites();
 
@@ -143,10 +157,11 @@ public class IndexingServiceImpl implements IndexingService {
                     siteRepository.save(siteEntity);
 
                     int countLetters = siteEntity.getUrl().length() - 1;
-                    url1 = url.substring(countLetters);
+                    uri = url.substring(countLetters);
 
-//                    PageIndexing pageIndexing = new PageIndexing(url1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository);
-//                    pageIndexing.indexPage();
+                    Storage storage = new Storage();
+                    PageIndexing pageIndexing = new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage);
+                    pageIndexing.indexPage();
                 }
             }
             return new IndexingResponse();
@@ -156,6 +171,8 @@ public class IndexingServiceImpl implements IndexingService {
                     "указанных в конфигурационном файле\n");
         }
     }
+
+
     private boolean siteInConfig(String url) {
 
         List<Site> sitesList = sites.getSites();
@@ -163,8 +180,18 @@ public class IndexingServiceImpl implements IndexingService {
         for (int i=0; i < sitesList.size(); i++) {
             //создали объект site с полями name и url
             Site site = sitesList.get(i);
-            if (url.equals(site.getUrl())) {
-                return true;
+
+            String siteUrl = sitesList.get(i).getUrl();
+
+            Pattern pattern = Pattern.compile(siteUrl);
+            Matcher matcher = pattern.matcher(url);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                System.out.println(url.substring(start, end));
+                if (siteUrl.equals(url.substring(start, end))) {
+                    return true;
+                }
             }
         }
         return false;
@@ -181,7 +208,6 @@ public class IndexingServiceImpl implements IndexingService {
             pageRepository.deleteById(pageId);
 
             for (Integer lemmaId : listLemmaId) {
-                System.out.println(lemmaId);
                 LemmaEntity lemmaEntity = lemmaRepository.findById(lemmaId).get();
                 int freq = lemmaEntity.getFrequency();
                 if (freq != 1) {
@@ -198,11 +224,50 @@ public class IndexingServiceImpl implements IndexingService {
             return true;
         } else return false;
     }
-    private boolean siteContainsInDB(String urlSite) {
+    private boolean siteContainsInDB(String url) {
 
-        if (urlSite.equals(siteRepository.contains(urlSite))) {
-            return true;
-        } else return false;
+        int countSite = siteRepository.getCount();
+
+        for (int i=1; i <= countSite; i++) {
+
+            String siteUrl = siteRepository.findById(i).get().getUrl();
+
+            Pattern pattern = Pattern.compile(siteUrl);
+            Matcher matcher = pattern.matcher(url);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                System.out.println(url.substring(start, end));
+                if (siteUrl.equals(url.substring(start, end))) {
+                    return true;
+                }
+            }
+        }
+
+//        if (urlSite.equals(siteRepository.contains(urlSite))) {
+//            return true;
+//        } else return false;
+        return false;
+    }
+    private String getSiteUrl(String url) {
+
+        String siteUrl = "";
+
+        List<Site> sitesList = sites.getSites();
+
+        for (int i=0; i < sitesList.size(); i++) {
+            //создали объект site с полями name и url
+            String siteUrlRegex = sitesList.get(i).getUrl();
+
+            Pattern pattern = Pattern.compile(siteUrlRegex);
+            Matcher matcher = pattern.matcher(url);
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                siteUrl = url.substring(start, end);
+            }
+        }
+        return siteUrl;
     }
     private void shutdownAndAwaitTermination(ExecutorService pool) {
         // Disable new tasks from being submitted

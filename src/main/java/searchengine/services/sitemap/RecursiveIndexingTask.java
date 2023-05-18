@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RecursiveIndexingTask extends RecursiveAction {
 
-    private String link;
+    private String url;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
@@ -37,8 +37,8 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private FlagStop flagStop;
     private Storage storage;
 
-    public RecursiveIndexingTask(String link, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop, Storage storage) {
-        this.link = link;
+    public RecursiveIndexingTask(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop, Storage storage) {
+        this.url = url;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
@@ -47,39 +47,31 @@ public class RecursiveIndexingTask extends RecursiveAction {
         this.flagStop = flagStop;
         this.storage = storage;
     }
-
     @Override
     protected void compute() {
-
         //Флажок завершения задачи
         if (!flagStop.isStopNow()) {
 
             ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
-
             try {
-                Connection.Response response = Jsoup.connect(link).execute();
+                Connection.Response response = Jsoup.connect(url).execute();
                 Document doc = response.parse();
                 Elements elements = doc.select("a");
                 elements.forEach(element -> {
 
                     if (!flagStop.isStopNow()) {
-
-                        String newLink = element.absUrl("href");
-
-                        if (isDomainUrl(newLink)) {
-
+                        String newUrl = element.absUrl("href");
+                        if (isDomainUrl(newUrl)) {
                             //получили ссылку без сайта
-                            String newLink1 = deleteUrl(newLink);
+                            String uri = getUri(newUrl);
 
                             synchronized (pageRepository) {
-
-                                if (!containsInDataBase(newLink1)) {
-
-                                    new PageIndexing(newLink1, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
-                                    System.out.println("сохр. ссылку " + newLink1 + " | из потока " + Thread.currentThread().getName());
-
+                                if (!containsInDataBase(uri)) {
+                                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage)
+                                            .indexPage();
+                                    System.out.println("сохр. ссылку " + uri + " | из потока " + Thread.currentThread().getName());
                                     RecursiveIndexingTask task = new RecursiveIndexingTask(
-                                            newLink,
+                                            newUrl,
                                             siteEntity,
                                             siteRepository,
                                             pageRepository,
@@ -102,15 +94,14 @@ public class RecursiveIndexingTask extends RecursiveAction {
             }
         }
     }
-
-    public boolean containsInDataBase(String link) {
+    private boolean containsInDataBase(String link) {
         if (link.equals(pageRepository.contains(link))) {
             return true;
         } else {
             return false;
         }
     }
-    public boolean isDomainUrl(String link) {
+    private boolean isDomainUrl(String link) {
         if (link.startsWith(siteEntity.getUrl())
                 && !link.contains("#")
                 && !link.contains("jpg")
@@ -124,7 +115,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
             return false;
         }
     }
-    private String deleteUrl(String url) {
+    private String getUri(String url) {
         int countLetters = siteEntity.getUrl().length() - 1;
         return url.substring(countLetters);
     }
