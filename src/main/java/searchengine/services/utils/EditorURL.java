@@ -7,12 +7,9 @@ public class EditorURL {
     private final String HTTP_REGEX_RU = "http://www.[^*?!@#$%&()+-,|]+.ru/";
     private final String HTTPS_REGEX_RU = "https://www.[^*?!@#$%&()+-,|]+.ru/";
     private final String HTTP_REGEX_COM = "http://www.[^*?!@#$%&()+-,|]+.com/";
-
     private final String HTTPS_REGEX_СOM = "https://www.[^*?!@#$%&()+-,|]+.com/";
     private final String HTTP_REGEX_LIKE = "http://www.[^*?!@#$%&()+-,|]+.life/";
     private final String HTTPS_REGEX_LIKE = "https://www.[^*?!@#$%&()+-,|]+.life/";
-    private String url;
-
 
     public String getSiteURL(String url) {
 
@@ -35,13 +32,11 @@ public class EditorURL {
         }
         return siteURL;
     }
-
     public void deleteSite(String url) {
         String site = "https://www.playback.ru/";
         String newUrl = url.substring(site.length()-1);
         System.out.println(newUrl);
     }
-
     public void getTitleFromHtmlCode(String html) {
 
         System.out.println("Зашли в метод");
