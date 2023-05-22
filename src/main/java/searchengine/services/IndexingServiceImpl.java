@@ -6,6 +6,7 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
@@ -108,16 +109,9 @@ public class IndexingServiceImpl implements IndexingService {
         // url - https://www.playback.ru/catalog/1141.html
         // uri - /catalog/1141.html
         String uri = "";
-        EditorURL editorURL = new EditorURL();
-        // siteUrl - https://www.playback.ru/
-        //String siteUrl = editorURL.getSiteURL(url);
 
-        //проверить наличие сайта в БД
         if (siteContainsInDB(url)) {
-
-            System.out.println("Сайт в БД");
             SiteEntity siteEntity = siteRepository.getByUrl(url);
-
             //проверить наличие ссылки в Таблице page
             int countLetters = siteEntity.getUrl().length() - 1;
             uri = url.substring(countLetters);
@@ -134,8 +128,6 @@ public class IndexingServiceImpl implements IndexingService {
 
             //проверка наличие сайта в конфиге
         } else if (siteInConfig(url)) {
-
-            System.out.println("Сайт в консоли");
             String siteUrl = getSiteUrl(url);
             System.out.println("- " + siteUrl);
 
@@ -160,8 +152,7 @@ public class IndexingServiceImpl implements IndexingService {
                     uri = url.substring(countLetters);
 
                     Storage storage = new Storage();
-                    PageIndexing pageIndexing = new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage);
-                    pageIndexing.indexPage();
+                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
                 }
             }
             return new IndexingResponse();
@@ -228,7 +219,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         int countSite = siteRepository.getCount();
 
-        for (int i=1; i <= countSite; i++) {
+        for (int i=1; i<=countSite; i++) {
 
             String siteUrl = siteRepository.findById(i).get().getUrl();
 

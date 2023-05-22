@@ -39,92 +39,92 @@ public class PageIndexing {
     }
 
     public void indexPage()  {
+
         siteEntity.setTime(LocalDateTime.now());
         siteRepository.save(siteEntity);
         String fullUrl = siteEntity.getUrl() + uri.substring(1);
+
+
         try {
-            Document doc2 = Jsoup.connect(fullUrl).get();
+
+            long start3 = System.currentTimeMillis();
+            Document doc2 = Jsoup.connect(fullUrl).get();// длительность почти секунда
+            long finish3 = System.currentTimeMillis() - start3;
+            System.out.println("скорость получения Document " + finish3);
+
+            long start2 = System.currentTimeMillis();
+            String html1 = Jsoup.connect(fullUrl).get().outerHtml();
+            long finish2 = System.currentTimeMillis() - start2;
+            System.out.println("скорость получения кода html " + finish2);
+
             PageEntity pageEntity = new PageEntity();
+
             EditorURL editorURL = new EditorURL();
+
+            long start4 = System.currentTimeMillis();
             String html = editorURL.removeEmojiFromText(doc2.outerHtml());
-            int statusCode = doc2.connection().response().statusCode();
+            long finish4 = System.currentTimeMillis() - start4;
+            System.out.println("скорость получения кода html через doc2 " + finish4);
+
+            long start5 = System.currentTimeMillis();
+            int statusCode = Jsoup.connect(fullUrl).post().connection().response().statusCode();
+            long finish5 = System.currentTimeMillis() - start5;
+            System.out.println("скорость получения кода ответа " + finish5);
+
+            //быстро
             pageEntity.setSite(siteEntity);
             pageEntity.setCodeHTTP(statusCode);
             pageEntity.setContent(html);
             pageEntity.setPath(uri);
             pageRepository.save(pageEntity);
-            saveLemma(doc2.outerHtml(), pageEntity);
+
+            saveLemmaAndIndex(html, pageEntity);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void saveLemma(String codeHTML, PageEntity pageEntity) {
+    private void saveLemmaAndIndex(String codeHTML, PageEntity pageEntity) {
 
         long start = System.currentTimeMillis();
 
+        Set<IndexEntity> setIndexEntities = new HashSet<>();
+        Set<LemmaEntity> setLemmaEntities = new HashSet<>();
+
         try {
             LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
-
-            Map<String, Integer> map = new HashMap<>();
-
-            map = lemmaFinder.getLemmaMapWithoutParticles(codeHTML);
-
-            Set<IndexEntity> indexes = new HashSet<>();
-
-            Set<LemmaEntity> lemmaSET = new HashSet<>();
-
-            //========TESTING CODE=========
+            Map<String, Integer> map = lemmaFinder.getLemmaMapWithoutParticles(codeHTML);
 
             for (String key : map.keySet()) {
 
                 if (storage.lemmas.containsKey(key)) {
 
-                    LemmaEntity lemmaEntity = storage.lemmas.get(key);
-                    int count = lemmaEntity.getFrequency();
-                    lemmaEntity.setFrequency(count + 1);
-
+                    LemmaEntity lemmaEntity = updateLemmaEntity(key);
                     storage.lemmas.put(key, lemmaEntity);
-                    lemmaSET.add(lemmaEntity);
+                    setLemmaEntities.add(lemmaEntity);
 
-                    IndexEntity indexEntity = new IndexEntity();
-                    indexEntity.setLemmaEntity(lemmaEntity);
-                    indexEntity.setPageEntity(pageEntity);
-                    indexEntity.setRank(map.get(key));
-
-                    indexes.add(indexEntity);
+                    IndexEntity indexEntity = createIndexEntity(lemmaEntity, pageEntity, map.get(key));
+                    setIndexEntities.add(indexEntity);
 
                 } else {
 
-                    int count2 = 1;
-                    storage.addLemma(key, count2);
-
-                    LemmaEntity lemmaEntity = new LemmaEntity();
-                    lemmaEntity.setLemma(key);
-                    lemmaEntity.setFrequency(count2);
-                    lemmaEntity.setSiteEntity(siteEntity);
-
+                    LemmaEntity lemmaEntity = createLemmaEntity(key, 1, siteEntity);
                     storage.lemmas.put(key, lemmaEntity);
-                    lemmaSET.add(lemmaEntity);
+                    setLemmaEntities.add(lemmaEntity);
 
-                    IndexEntity indexEntity = new IndexEntity();
-                    indexEntity.setLemmaEntity(lemmaEntity);
-                    indexEntity.setPageEntity(pageEntity);
-                    indexEntity.setRank(map.get(key));
-
-                    indexes.add(indexEntity);
-
+                    IndexEntity indexEntity = createIndexEntity(lemmaEntity, pageEntity, map.get(key));
+                    setIndexEntities.add(indexEntity);
                 }
             }
 
             long start1 = System.currentTimeMillis();
-            lemmaRepository.saveAll(lemmaSET);
-            indexRepository.saveAll(indexes);
+
+            lemmaRepository.saveAll(setLemmaEntities);
+            indexRepository.saveAll(setIndexEntities);
+
             long finish1 = System.currentTimeMillis() - start1;
             System.out.println("\tдобавление лемм + индексов  - " + finish1);
-            //=======TESTING END===========
-
             long finish = System.currentTimeMillis() - start;
             System.out.println("\t\tдлительность операции с леммами - " + finish + " мс.");
 
@@ -132,4 +132,25 @@ public class PageIndexing {
             throw new RuntimeException(e);
         }
     }
+    private IndexEntity createIndexEntity(LemmaEntity lemmaEntity, PageEntity pageEntity, int countLemma) {
+        IndexEntity indexEntity = new IndexEntity();
+        indexEntity.setLemmaEntity(lemmaEntity);
+        indexEntity.setPageEntity(pageEntity);
+        indexEntity.setRank(countLemma);
+        return indexEntity;
+    }
+    private LemmaEntity createLemmaEntity(String lemma, int frequency, SiteEntity siteEntity) {
+        LemmaEntity lemmaEntity = new LemmaEntity();
+        lemmaEntity.setLemma(lemma);
+        lemmaEntity.setFrequency(frequency);
+        lemmaEntity.setSiteEntity(siteEntity);
+        return lemmaEntity;
+    }
+    private LemmaEntity updateLemmaEntity(String lemma) {
+        LemmaEntity lemmaEntity = storage.lemmas.get(lemma);
+        int count = lemmaEntity.getFrequency();
+        lemmaEntity.setFrequency(count + 1);
+        return lemmaEntity;
+    }
+
 }

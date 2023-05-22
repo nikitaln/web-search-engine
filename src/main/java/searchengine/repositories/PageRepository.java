@@ -1,6 +1,7 @@
 package searchengine.repositories;
 
 import lombok.Synchronized;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -32,4 +33,5 @@ public interface PageRepository extends CrudRepository<PageEntity, Integer> {
 
     @Query(value = "SELECT COUNT(*) FROM page WHERE site_id = :siteId", nativeQuery = true)
     int getCountPagesBySiteId(int siteId);
+
 }
