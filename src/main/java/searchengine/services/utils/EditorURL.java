@@ -1,5 +1,7 @@
 package searchengine.services.utils;
 
+import com.vdurmont.emoji.EmojiParser;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,5 +69,15 @@ public class EditorURL {
                 System.out.println(url.substring(start, end));
             }
         }
+    }
+
+    public String removeEmojiFromText(String text) {
+
+        //String regex = "[^\\p{L}\\p{M}\\p{N}\\p{P}\\p{Z}\\p{Cf}\\p{Cs}\\s]";
+        //System.out.println(text.replaceAll(regex, text));
+
+        String textWithoutEmoji = EmojiParser.removeAllEmojis(text);
+        return textWithoutEmoji;
+
     }
 }

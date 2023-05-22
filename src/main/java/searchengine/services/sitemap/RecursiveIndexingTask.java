@@ -51,11 +51,9 @@ public class RecursiveIndexingTask extends RecursiveAction {
     protected void compute() {
         //Флажок завершения задачи
         if (!flagStop.isStopNow()) {
-
             ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
             try {
-                Connection.Response response = Jsoup.connect(url).execute();
-                Document doc = response.parse();
+                Document doc = Jsoup.connect(url).get();
                 Elements elements = doc.select("a");
                 elements.forEach(element -> {
 
@@ -64,12 +62,11 @@ public class RecursiveIndexingTask extends RecursiveAction {
                         if (isDomainUrl(newUrl)) {
                             //получили ссылку без сайта
                             String uri = getUri(newUrl);
-
                             synchronized (pageRepository) {
                                 if (!containsInDataBase(uri)) {
                                     new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage)
                                             .indexPage();
-                                    System.out.println("сохр. ссылку " + uri + " | из потока " + Thread.currentThread().getName());
+                                    System.out.println("\tсохр. ссылку " + uri + " | из потока " + Thread.currentThread().getName());
                                     RecursiveIndexingTask task = new RecursiveIndexingTask(
                                             newUrl,
                                             siteEntity,
@@ -106,6 +103,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
                 && !link.contains("#")
                 && !link.contains("jpg")
                 && !link.contains("jpeg")
+                && !link.contains("png")
                 && !link.contains("doc")
                 && !link.contains("docx")
                 && !link.contains("*")
@@ -118,5 +116,27 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private String getUri(String url) {
         int countLetters = siteEntity.getUrl().length() - 1;
         return url.substring(countLetters);
+    }
+
+    private boolean getOnlyWebPage(String url) {
+
+        long start = System.currentTimeMillis();
+
+        String correctType = "text";
+        //https://dombulgakova.ru/?method=ical&id=5116
+
+        try {
+            String typeContent = Jsoup.connect(url)
+                    .ignoreContentType(true)
+                    .execute().contentType();
+            if (typeContent.contains(correctType)) {
+                long finish = System.currentTimeMillis() - start;
+                System.out.println("*время проверки веб-страницы " + finish + " мс");
+                return true;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
     }
 }

@@ -53,7 +53,7 @@ public class SiteMapThread implements Runnable {
         //запускаем индексацию при помощи fork-join
         recursiveIndexingTask = new RecursiveIndexingTask(siteEntity.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, storage);
 
-        fjp = new ForkJoinPool();
+        fjp = new ForkJoinPool(4);
         fjp.invoke(recursiveIndexingTask);
         fjp.shutdown();
 

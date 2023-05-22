@@ -11,7 +11,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
       show-sql: true
 
 indexing-settings:
@@ -20,5 +20,5 @@ indexing-settings:
       name: PlayBack.Ru
 #    - url: https://www.svetlovka.ru/
 #      name: Svetlovka.ru
-    - url: https://dombulgakova.ru/
-      name: DomBulgakova.ru
+#    - url: https://dombulgakova.ru/
+#      name: DomBulgakova.ru

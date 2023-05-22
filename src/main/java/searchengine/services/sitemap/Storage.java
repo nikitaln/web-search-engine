@@ -5,7 +5,6 @@ import searchengine.model.LemmaEntity;
 import java.util.*;
 
 public class Storage {
-
     //лемма и частота
     private Map<String, Integer> mapLemmas = new HashMap<>();
     public static Map<String, LemmaEntity> lemmas = new HashMap<>();
