@@ -119,7 +119,6 @@ public class RecursiveIndexingTask extends RecursiveAction {
         int countLetters = siteEntity.getUrl().length() - 1;
         return url.substring(countLetters);
     }
-
     private boolean getOnlyWebPage(String url) {
 
         long start = System.currentTimeMillis();
@@ -142,29 +141,5 @@ public class RecursiveIndexingTask extends RecursiveAction {
         return false;
     }
 
-    private PageEntity createPageEntity(String uri) {
-
-        String fullUrl = siteEntity.getUrl() + uri.substring(1);
-
-        try {
-            Document doc2 = Jsoup.connect(fullUrl).get(); // длительность почти секунда
-
-            PageEntity pageEntity = new PageEntity();
-            EditorURL editorURL = new EditorURL();
-            String html = editorURL.removeEmojiFromText(doc2.outerHtml());
-            int statusCode = doc2.connection().response().statusCode();
-            //быстро
-            pageEntity.setSite(siteEntity);
-            pageEntity.setCodeHTTP(statusCode);
-            pageEntity.setContent(html);
-            pageEntity.setPath(uri);
-
-            return pageEntity;
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
 
 }

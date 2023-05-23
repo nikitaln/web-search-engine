@@ -51,24 +51,19 @@ public class SearchServiceImpl implements SearchService {
 //
 //
 //        }
-
-
-
-
         //очищаем список страниц
         pagesId.clear();
 
-        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
 
         //получаем список лемм-частота
-        mapLemmaFrequency = getMapLemmaFrequency(query);
+        Map<String, Integer> mapLemmaFrequency = getMapLemmaFrequency(query);
 
         for (String key : mapLemmaFrequency.keySet()) {
             System.out.println("лемма: " + key + " | частота: " + mapLemmaFrequency.get(key));
         }
 
         //удаление популярных лемм
-        //mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
+        mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
         //необходимо отсортировать по возрастанию частоты от самой маленькой
         System.out.println("\tсортировка по частоте");
@@ -91,33 +86,19 @@ public class SearchServiceImpl implements SearchService {
         }
 
         //расчитать Ранк
-        Map<Integer, Float> mapRel = countRank(pagesId, mapLemmaFrequency);
+        Map<Integer, Float> mapPagesRelevance = countRank(pagesId, mapLemmaFrequency);
 
-        List<SearchDataResponse> list = new ArrayList<>();
+        List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
+        SearchTotalResponse searchTotalResponse = getTotalResponse(list);
 
-        for (Integer key : mapRel.keySet()) {
-            //System.out.println("page ID: " + key + " | Rank rel: " + mapRel.get(key));
+        return searchTotalResponse;
+    }
 
-            PageEntity pageEntity = pageRepository.findById(key).get();
-            SiteEntity siteEntity = pageEntity.getSite();
-
-            SearchDataResponse data = new SearchDataResponse();
-            data.setRelevance(mapRel.get(key));
-            data.setUri(pageEntity.getPath());
-
-            data.setSnippet(searchSnippet(pageEntity.getContent(), query));
-            data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
-            data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
-            data.setSiteName(pageEntity.getSite().getNameSite());
-
-            list.add(data);
-        }
-
+    private SearchTotalResponse getTotalResponse(List<SearchDataResponse> list) {
         SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
         searchTotalResponse.setCount(list.size());
         searchTotalResponse.setResult(true);
         searchTotalResponse.setData(list);
-
         return searchTotalResponse;
     }
 
@@ -164,6 +145,27 @@ public class SearchServiceImpl implements SearchService {
 
         return mapLemmaFrequency;
     }
+    private List<SearchDataResponse> getListSearchDataResponse(Map<Integer, Float> map, String query) {
+
+        List<SearchDataResponse> list = new ArrayList<>();
+        for (Integer key : map.keySet()) {
+
+            PageEntity pageEntity = pageRepository.findById(key).get();
+
+            SearchDataResponse data = new SearchDataResponse();
+
+            data.setRelevance(map.get(key));
+            data.setUri(pageEntity.getPath());
+            data.setSnippet(searchSnippet(pageEntity.getContent(), query));
+            data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
+            data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
+            data.setSiteName(pageEntity.getSite().getNameSite());
+
+            list.add(data);
+        }
+
+        return list;
+    }
 
     //сортировка по возрастанию значения частоты
     private Map<String, Integer> ascendingSortByValue(Map<String, Integer> map) {
@@ -189,7 +191,6 @@ public class SearchServiceImpl implements SearchService {
 
         return listPagesId;
     }
-
 
     private void searchForTheSamePages(List<Integer> list) {
 
@@ -275,7 +276,7 @@ public class SearchServiceImpl implements SearchService {
 
         String[] arrayWords = query.split(" ");
 
-        String regex = "[^А-Яа-я\\s]";
+        String regex = "[^.,А-Яа-я\\s]";
         String htmlWithoutTags = html.replaceAll(regex, "");
 
         StringBuilder stringBuilder = new StringBuilder();

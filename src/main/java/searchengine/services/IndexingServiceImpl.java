@@ -110,8 +110,12 @@ public class IndexingServiceImpl implements IndexingService {
         // uri - /catalog/1141.html
         String uri = "";
 
-        if (siteContainsInDB(url)) {
-            SiteEntity siteEntity = siteRepository.getByUrl(url);
+        EditorURL editorURL = new EditorURL();
+        String siteUrl = editorURL.getSiteURL(url);
+
+        if (siteContainsInDB(siteUrl)) {
+
+            SiteEntity siteEntity = siteRepository.getByUrl(siteUrl);
             //проверить наличие ссылки в Таблице page
             int countLetters = siteEntity.getUrl().length() - 1;
             uri = url.substring(countLetters);
@@ -127,9 +131,7 @@ public class IndexingServiceImpl implements IndexingService {
             return new IndexingResponse();
 
             //проверка наличие сайта в конфиге
-        } else if (siteInConfig(url)) {
-            String siteUrl = getSiteUrl(url);
-            System.out.println("- " + siteUrl);
+        } else if (siteInConfig(siteUrl)) {
 
             List<Site> sitesList = sites.getSites();
 
@@ -164,40 +166,42 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
 
-    private boolean siteInConfig(String url) {
+    private boolean siteInConfig(String siteUrl) {
 
         List<Site> sitesList = sites.getSites();
-
         for (int i=0; i < sitesList.size(); i++) {
-            //создали объект site с полями name и url
-            Site site = sitesList.get(i);
-
-            String siteUrl = sitesList.get(i).getUrl();
-
-            Pattern pattern = Pattern.compile(siteUrl);
-            Matcher matcher = pattern.matcher(url);
-            while (matcher.find()) {
-                int start = matcher.start();
-                int end = matcher.end();
-                System.out.println(url.substring(start, end));
-                if (siteUrl.equals(url.substring(start, end))) {
-                    return true;
-                }
+            if (sitesList.get(i).getUrl().equals(siteUrl)) {
+                return true;
             }
         }
         return false;
+
+
+//        for (int i=0; i < sitesList.size(); i++) {
+//            //создали объект site с полями name и url
+//            Site site = sitesList.get(i);
+//
+//            String siteUrl = sitesList.get(i).getUrl();
+//
+//            Pattern pattern = Pattern.compile(siteUrl);
+//            Matcher matcher = pattern.matcher(url);
+//            while (matcher.find()) {
+//                int start = matcher.start();
+//                int end = matcher.end();
+//                System.out.println(url.substring(start, end));
+//                if (siteUrl.equals(url.substring(start, end))) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
     }
     private void deletePage(String url) {
 
         if (url.equals(pageRepository.contains(url))) {
             int pageId = pageRepository.getId(url);
-
-            List<Integer> listLemmaId = new ArrayList<>();
-
-            listLemmaId = indexRepository.getAllLemmaId(pageId);
-
+            List<Integer> listLemmaId = indexRepository.getAllLemmaId(pageId);
             pageRepository.deleteById(pageId);
-
             for (Integer lemmaId : listLemmaId) {
                 LemmaEntity lemmaEntity = lemmaRepository.findById(lemmaId).get();
                 int freq = lemmaEntity.getFrequency();
@@ -215,30 +219,30 @@ public class IndexingServiceImpl implements IndexingService {
             return true;
         } else return false;
     }
-    private boolean siteContainsInDB(String url) {
+    private boolean siteContainsInDB(String urlSite) {
 
-        int countSite = siteRepository.getCount();
+//        int countSite = siteRepository.getCount();
+//
+//        for (int i=1; i<=countSite; i++) {
+//
+//            String siteUrl = siteRepository.findById(i).get().getUrl();
+//
+//            Pattern pattern = Pattern.compile(siteUrl);
+//            Matcher matcher = pattern.matcher(url);
+//            while (matcher.find()) {
+//                int start = matcher.start();
+//                int end = matcher.end();
+//                System.out.println(url.substring(start, end));
+//                if (siteUrl.equals(url.substring(start, end))) {
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
 
-        for (int i=1; i<=countSite; i++) {
-
-            String siteUrl = siteRepository.findById(i).get().getUrl();
-
-            Pattern pattern = Pattern.compile(siteUrl);
-            Matcher matcher = pattern.matcher(url);
-            while (matcher.find()) {
-                int start = matcher.start();
-                int end = matcher.end();
-                System.out.println(url.substring(start, end));
-                if (siteUrl.equals(url.substring(start, end))) {
-                    return true;
-                }
-            }
-        }
-
-//        if (urlSite.equals(siteRepository.contains(urlSite))) {
-//            return true;
-//        } else return false;
-        return false;
+        if (urlSite.equals(siteRepository.contains(urlSite))) {
+            return true;
+        } else return false;
     }
     private String getSiteUrl(String url) {
 

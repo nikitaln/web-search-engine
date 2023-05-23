@@ -5,20 +5,14 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class MainTest {
 
     public static void main(String[] args) {
 
-        long start = System.currentTimeMillis();
-
-        Jsoup.connect("https://dombulgakova.ru/?method=ical&id=5116");
-
-
-
-
-        long finish = System.currentTimeMillis() - start;
-        System.out.println("time | " + finish);
-
+        EditorURL url = new EditorURL();
+        System.out.println(url.getSiteURL("https://www.playback.ru/catalog/1141.html"));
     }
 }

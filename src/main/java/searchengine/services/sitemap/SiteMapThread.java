@@ -35,20 +35,11 @@ public class SiteMapThread implements Runnable {
     @Override
     public void run() {
 
-        //создали сущность site для вставки в БД
-        SiteEntity siteEntity = new SiteEntity();
-        siteEntity.setNameSite(site.getName());
-        siteEntity.setUrl(site.getUrl());
-        siteEntity.setTime(LocalDateTime.now());
-        siteEntity.setText(null);
-        siteEntity.setStatus(StatusType.INDEXING);
-
-        //записали сущность в БД
+        SiteEntity siteEntity = createSiteEntity(site.getName(), site.getUrl());
         siteRepository.save(siteEntity);
 
-        System.out.println("Создали сущность сайт");
-
-        System.out.println("Поток <" + Thread.currentThread().getName() + "> индексирует сайт - " + site.getName());
+        System.out.println("siteEntity: created");
+        System.out.println("Thread: " + Thread.currentThread().getName() + " | indexing site: " + site.getName());
 
         //запускаем индексацию при помощи fork-join
         recursiveIndexingTask = new RecursiveIndexingTask(siteEntity.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, storage);
@@ -57,6 +48,16 @@ public class SiteMapThread implements Runnable {
         fjp.invoke(recursiveIndexingTask);
         fjp.shutdown();
 
-        System.out.println("Конец");
+        System.out.println("The end");
+    }
+
+    private SiteEntity createSiteEntity(String siteName, String siteUrl) {
+        SiteEntity siteEntity = new SiteEntity();
+        siteEntity.setNameSite(siteName);
+        siteEntity.setUrl(siteUrl);
+        siteEntity.setTime(LocalDateTime.now());
+        siteEntity.setText(null);
+        siteEntity.setStatus(StatusType.INDEXING);
+        return siteEntity;
     }
 }

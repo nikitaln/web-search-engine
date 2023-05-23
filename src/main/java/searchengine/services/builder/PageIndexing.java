@@ -1,5 +1,6 @@
 package searchengine.services.builder;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.config.LemmaConfiguration;
@@ -47,6 +48,13 @@ public class PageIndexing {
 
         try {
 
+            long START_3 = System.currentTimeMillis();
+            Connection.Response response = Jsoup.connect(fullUrl).followRedirects(false).execute();
+            System.out.println(response.statusCode() + " : " + response.url());
+            long FINISH_3 = System.currentTimeMillis() - START_3;
+
+            System.out.println("\tвремя получения ответа : " + FINISH_3);
+
             long start3 = System.currentTimeMillis();
             Document doc2 = Jsoup.connect(fullUrl).get();// длительность почти секунда
             long finish3 = System.currentTimeMillis() - start3;
@@ -58,27 +66,13 @@ public class PageIndexing {
             System.out.println("скорость получения кода html " + finish2);
 
             PageEntity pageEntity = new PageEntity();
-
-            EditorURL editorURL = new EditorURL();
-
-            long start4 = System.currentTimeMillis();
-            String html = editorURL.removeEmojiFromText(doc2.outerHtml());
-            long finish4 = System.currentTimeMillis() - start4;
-            System.out.println("скорость получения кода html через doc2 " + finish4);
-
-            long start5 = System.currentTimeMillis();
-            int statusCode = Jsoup.connect(fullUrl).post().connection().response().statusCode();
-            long finish5 = System.currentTimeMillis() - start5;
-            System.out.println("скорость получения кода ответа " + finish5);
-
-            //быстро
             pageEntity.setSite(siteEntity);
-            pageEntity.setCodeHTTP(statusCode);
-            pageEntity.setContent(html);
+            pageEntity.setCodeHTTP(response.statusCode());
+            pageEntity.setContent(doc2.outerHtml());
             pageEntity.setPath(uri);
             pageRepository.save(pageEntity);
 
-            saveLemmaAndIndex(html, pageEntity);
+            saveLemmaAndIndex(doc2.outerHtml(), pageEntity);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
