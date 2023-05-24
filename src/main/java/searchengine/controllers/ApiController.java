@@ -44,9 +44,6 @@ public class ApiController {
 
     @GetMapping("/search")
     public ResponseEntity<SearchTotalResponse> search(String site, String query) {
-
-        System.out.println(site + " все сайты");
-
         return ResponseEntity.ok(searchService.searchInformation(site, query));
     }
 

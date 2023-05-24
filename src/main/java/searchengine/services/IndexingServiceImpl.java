@@ -154,7 +154,7 @@ public class IndexingServiceImpl implements IndexingService {
                     uri = url.substring(countLetters);
 
                     Storage storage = new Storage();
-                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
+
                 }
             }
             return new IndexingResponse();

@@ -117,6 +117,8 @@ public class PageIndexing {
             lemmaRepository.saveAll(setLemmaEntities);
             indexRepository.saveAll(setIndexEntities);
 
+            storage.lemmas.clear();
+
             long finish1 = System.currentTimeMillis() - start1;
             System.out.println("\tдобавление лемм + индексов  - " + finish1);
             long finish = System.currentTimeMillis() - start;

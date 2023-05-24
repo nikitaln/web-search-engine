@@ -16,6 +16,7 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
 
+import javax.persistence.criteria.CriteriaBuilder;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.util.*;
@@ -38,55 +39,51 @@ public class SearchServiceImpl implements SearchService {
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
-    private List<Integer> pagesId = new ArrayList<>();
-    private List<SearchTotalResponse> totalResponse = new ArrayList<>();
-    //private int control = 0;
-
     @Override
     public SearchTotalResponse searchInformation(String site, String query) {
 
-//        if (!site.equals(null)) {
-//
-//
-//
-//
-//        }
-        //очищаем список страниц
-        pagesId.clear();
+        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
 
+        if (site == null) {
+            System.out.println("search for all sites");
+            mapLemmaFrequency = getMapLemmaFrequency(query);
 
-        //получаем список лемм-частота
-        Map<String, Integer> mapLemmaFrequency = getMapLemmaFrequency(query);
+        } else if (site != null) {
+
+            System.out.println("start indexing site: " + site);
+            int idSite = siteRepository.getId(site);
+            System.out.println("site ID: " + idSite);
+            mapLemmaFrequency = getMapLemmaFrequencyForSite(query, idSite);
+
+        }
 
         for (String key : mapLemmaFrequency.keySet()) {
             System.out.println("лемма: " + key + " | частота: " + mapLemmaFrequency.get(key));
         }
 
         //удаление популярных лемм
-        mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
+        //mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
 
         //необходимо отсортировать по возрастанию частоты от самой маленькой
         System.out.println("\tсортировка по частоте");
 
         mapLemmaFrequency = ascendingSortByValue(mapLemmaFrequency);
 
-//FIXING===============================================================================================================
-
         //по самому редкому слову-лемме находим все страницы на которых оно встречается
         //создаем список страниц на основе списка страниц с самой редкой леммой
         //поиск страниц где встречаются все леммы-слова из запроса
 
         //список страниц на которых есть все леммы из запроса
-        pagesId = searchPagesWithEachLemma(mapLemmaFrequency);
+        List<Integer> listPagesId = searchPagesWithEachLemma(mapLemmaFrequency); //<-FIXED
 
         int i = 1;
-        for (Integer pageId : pagesId) {
+        for (Integer pageId : listPagesId) {
             System.out.println(i + ". Страницы на которых есть все леммы: page ID: " + pageId);
             i = i + 1;
         }
 
         //расчитать Ранк
-        Map<Integer, Float> mapPagesRelevance = countRank(pagesId, mapLemmaFrequency);
+        Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, mapLemmaFrequency);
 
         List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
         SearchTotalResponse searchTotalResponse = getTotalResponse(list);
@@ -112,13 +109,19 @@ public class SearchServiceImpl implements SearchService {
 
             int lemmaId = lemmaRepository.getLemmaId(key);
 
-            //добавляем ид страниц в коллекцию
-            if (pagesId.size() == 0) {
-                //все страницы на которых встречается данная лемма
-                pagesId = getAllPagesId(lemmaId);
-            } else {
-                //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
-                searchForTheSamePages(getAllPagesId(lemmaId));
+            List<Integer> lemmasId = lemmaRepository.getLemmaIdByLemma(key);
+
+            for (int i = 0; i < lemmasId.size(); i++) {
+                //добавляем ид страниц в коллекцию
+                if (pagesId.size() == 0) {
+                    //все страницы на которых встречается данная лемма
+                    pagesId = getAllPagesId(lemmaId);
+                } else {
+                    //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
+                    List<Integer> list = searchForTheSamePages(pagesId, getAllPagesId(lemmaId));
+                    pagesId.clear();
+                    pagesId.addAll(list);
+                }
             }
         }
         return pagesId;
@@ -131,8 +134,7 @@ public class SearchServiceImpl implements SearchService {
 
         try {
             LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
-            Map<String, Integer> map = new HashMap<>();
-            map = lemmaFinder.getLemmaMapWithoutParticles(query);
+            Map<String, Integer> map = lemmaFinder.getLemmaMapWithoutParticles(query);
 
             for (String key : map.keySet()) {
                 //создаем коллекцию ключ-слово, значение-частота
@@ -192,14 +194,16 @@ public class SearchServiceImpl implements SearchService {
         return listPagesId;
     }
 
-    private void searchForTheSamePages(List<Integer> list) {
+    private List<Integer> searchForTheSamePages(List<Integer> listOld, List<Integer> listNew) {
 
-        for (int i = 0; i < pagesId.size(); i++) {
-            if (!list.contains(pagesId.get(i))) {
-                pagesId.remove(i);
-                i--;
+        List<Integer> list1 = new ArrayList<>();
+
+        for (int i = 0; i < listOld.size(); i++) {
+            if (listNew.contains(listOld.get(i))) {
+                list1.add(listOld.get(i));
             }
         }
+        return list1;
     }
 
     private Map<Integer, Float> countRank(List<Integer> list, Map<String, Integer> map) {
@@ -328,5 +332,25 @@ public class SearchServiceImpl implements SearchService {
 //            return citation;
         }
         return citation;
+    }
+
+    private Map<String, Integer> getMapLemmaFrequencyForSite(String query, int siteId) {
+
+        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
+
+        try {
+            LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
+            Map<String, Integer> map = lemmaFinder.getLemmaMapWithoutParticles(query);
+
+            for (String key : map.keySet()) {
+                //создаем коллекцию ключ-слово, значение-частота
+                mapLemmaFrequency.put(key, lemmaRepository.getFrequencyByLemmaAndSite(key, siteId));
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return mapLemmaFrequency;
     }
 }
