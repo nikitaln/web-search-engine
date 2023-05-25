@@ -42,13 +42,16 @@ public class SiteMapThread implements Runnable {
         System.out.println("Thread: " + Thread.currentThread().getName() + " | indexing site: " + site.getName());
 
         //запускаем индексацию при помощи fork-join
-        recursiveIndexingTask = new RecursiveIndexingTask(siteEntity.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, storage);
+        recursiveIndexingTask = new RecursiveIndexingTask(site.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, storage);
 
         fjp = new ForkJoinPool(4);
         fjp.invoke(recursiveIndexingTask);
         fjp.shutdown();
 
-        System.out.println("The end");
+        siteEntity.setStatus(StatusType.INDEXED);
+        siteRepository.save(siteEntity);
+
+        System.out.println("Finish Indexing Site");
     }
 
     private SiteEntity createSiteEntity(String siteName, String siteUrl) {

@@ -48,26 +48,17 @@ public class PageIndexing {
 
         try {
 
-            long START_3 = System.currentTimeMillis();
-            Connection.Response response = Jsoup.connect(fullUrl).followRedirects(false).execute();
-            System.out.println(response.statusCode() + " : " + response.url());
-            long FINISH_3 = System.currentTimeMillis() - START_3;
+//            long START_3 = System.currentTimeMillis();
+//            Connection.Response response = Jsoup.connect(fullUrl).followRedirects(false).execute();
+//            System.out.println(response.statusCode() + " : " + response.url());
+//            long FINISH_3 = System.currentTimeMillis() - START_3;
+//            System.out.println("\tвремя получения ответа : " + FINISH_3);
 
-            System.out.println("\tвремя получения ответа : " + FINISH_3);
-
-            long start3 = System.currentTimeMillis();
             Document doc2 = Jsoup.connect(fullUrl).get();// длительность почти секунда
-            long finish3 = System.currentTimeMillis() - start3;
-            System.out.println("скорость получения Document " + finish3);
-
-            long start2 = System.currentTimeMillis();
-            String html1 = Jsoup.connect(fullUrl).get().outerHtml();
-            long finish2 = System.currentTimeMillis() - start2;
-            System.out.println("скорость получения кода html " + finish2);
 
             PageEntity pageEntity = new PageEntity();
             pageEntity.setSite(siteEntity);
-            pageEntity.setCodeHTTP(response.statusCode());
+            pageEntity.setCodeHTTP(doc2.connection().response().statusCode());
             pageEntity.setContent(doc2.outerHtml());
             pageEntity.setPath(uri);
             pageRepository.save(pageEntity);
@@ -117,7 +108,7 @@ public class PageIndexing {
             lemmaRepository.saveAll(setLemmaEntities);
             indexRepository.saveAll(setIndexEntities);
 
-            storage.lemmas.clear();
+            //storage.lemmas.clear();
 
             long finish1 = System.currentTimeMillis() - start1;
             System.out.println("\tдобавление лемм + индексов  - " + finish1);
