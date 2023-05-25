@@ -76,6 +76,8 @@ public class IndexingServiceImpl implements IndexingService {
             executorService = Executors.newSingleThreadExecutor();
             siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
             executorService.execute(siteMapThread);
+            executorService.shutdown();
+
         }
         return new IndexingResponse();
     }
@@ -154,6 +156,8 @@ public class IndexingServiceImpl implements IndexingService {
                     uri = url.substring(countLetters);
 
                     Storage storage = new Storage();
+                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
+                    storage.lemmas.clear();
 
                 }
             }

@@ -40,56 +40,85 @@ public class SearchServiceImpl implements SearchService {
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
     @Override
-    public SearchTotalResponse searchInformation(String site, String query) {
+    public SearchTotalResponse searchOnAllSites(String query) {
 
-        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
+        System.out.println("search for all sites");
+        List<SearchDataResponse> listMain = new ArrayList<>();
 
-        if (site == null) {
-            System.out.println("search for all sites");
-            mapLemmaFrequency = getMapLemmaFrequency(query);
+        //найти все ИД сайтов
+        List<Integer> allSitesId = new ArrayList<>();
 
-        } else if (site != null) {
+        Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
-            System.out.println("start indexing site: " + site);
-            int idSite = siteRepository.getId(site);
-            System.out.println("site ID: " + idSite);
-            mapLemmaFrequency = getMapLemmaFrequencyForSite(query, idSite);
-
+        while (iterator.hasNext()) {
+            SiteEntity siteEntity = iterator.next();
+            allSitesId.add(siteEntity.getId());
         }
 
-        for (String key : mapLemmaFrequency.keySet()) {
-            System.out.println("лемма: " + key + " | частота: " + mapLemmaFrequency.get(key));
+        //ищем все леммы по первому сайту
+        for (int i = 0; i < allSitesId.size(); i++) {
+            int siteId = allSitesId.get(i);
+            Map<String, Integer> map1 = getMapLemmaFrequencyForSite(query, siteId);
+            map1 = ascendingSortByValue(map1);
+            List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(map1, siteId);
+            int j = 1;
+            for (Integer pageId : listPagesId) {
+                System.out.println(j + ". Страницы на которых есть все леммы: page ID: " + pageId);
+                j = j + 1;
+            }
+            Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, map1, siteId);
+            List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
+            listMain.addAll(list);
         }
+        SearchTotalResponse searchTotalResponse = getTotalResponse(listMain);
+        return searchTotalResponse;
+    }
 
-        //удаление популярных лемм
-        //mapLemmaFrequency = deletePopularLemma(mapLemmaFrequency);
+    @Override
+    public SearchTotalResponse searchOnOneSite(String site, String query) {
 
-        //необходимо отсортировать по возрастанию частоты от самой маленькой
-        System.out.println("\tсортировка по частоте");
-
-        mapLemmaFrequency = ascendingSortByValue(mapLemmaFrequency);
-
-        //по самому редкому слову-лемме находим все страницы на которых оно встречается
-        //создаем список страниц на основе списка страниц с самой редкой леммой
-        //поиск страниц где встречаются все леммы-слова из запроса
-
-        //список страниц на которых есть все леммы из запроса
-        List<Integer> listPagesId = searchPagesWithEachLemma(mapLemmaFrequency); //<-FIXED
+        int siteId = siteRepository.getId(site);
+        Map<String, Integer> map = getMapLemmaFrequencyForSite(query, siteId);
+        //сортировка по частоте от редкого слова до популярного
+        Map<String, Integer> mapSort = ascendingSortByValue(map);
+        //создать список страниц, на которых есть все леммы из запроса
+        List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(mapSort, siteId);
 
         int i = 1;
         for (Integer pageId : listPagesId) {
             System.out.println(i + ". Страницы на которых есть все леммы: page ID: " + pageId);
             i = i + 1;
         }
-
-        //расчитать Ранк
-        Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, mapLemmaFrequency);
+        Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, mapSort, siteId);
 
         List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
         SearchTotalResponse searchTotalResponse = getTotalResponse(list);
 
         return searchTotalResponse;
     }
+
+    private List<Integer> getPagesWithAllLemmasOnOneSite(Map<String, Integer> map, int siteId) {
+        List<Integer> pagesId = new ArrayList<>();
+
+        for (String key : map.keySet()) {
+
+            System.out.println("лемма: " + key + " | частота: " + map.get(key));
+            int lemmaId = lemmaRepository.getLemmaIdOnSiteId(key, siteId);
+            //добавляем ид страниц в коллекцию
+            if (pagesId.size() == 0) {
+                //все страницы на которых встречается данная лемма
+                pagesId = getAllPagesId(lemmaId);
+            } else {
+                //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
+                List<Integer> list = searchForTheSamePages(pagesId, getAllPagesId(lemmaId));
+                pagesId.clear();
+                pagesId.addAll(list);
+            }
+        }
+        return pagesId;
+    }
+
+
 
     private SearchTotalResponse getTotalResponse(List<SearchDataResponse> list) {
         SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
@@ -206,7 +235,7 @@ public class SearchServiceImpl implements SearchService {
         return list1;
     }
 
-    private Map<Integer, Float> countRank(List<Integer> list, Map<String, Integer> map) {
+    private Map<Integer, Float> countRank(List<Integer> list, Map<String, Integer> map, int siteId) {
 
         float maxAbs = 0;
         //id страницы и абсолютная релевантность
@@ -218,7 +247,7 @@ public class SearchServiceImpl implements SearchService {
             float abs = 0;
             //c каждой страницы брать количество лемм
             for (String key : map.keySet()) {
-                int lemmaId = lemmaRepository.getLemmaId(key);
+                int lemmaId = lemmaRepository.getLemmaIdOnSiteId(key, siteId);
                 float rank = indexRepository.getRankByLemmaIdAndPageId(lemmaId, list.get(i));
                 abs = abs + rank;
             }
