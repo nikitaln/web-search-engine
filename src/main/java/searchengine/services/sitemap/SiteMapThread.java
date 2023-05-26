@@ -7,6 +7,7 @@ import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.builder.SiteService;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.ForkJoinPool;
@@ -35,11 +36,15 @@ public class SiteMapThread implements Runnable {
     @Override
     public void run() {
 
-        SiteEntity siteEntity = createSiteEntity(site.getName(), site.getUrl());
-        siteRepository.save(siteEntity);
+//        SiteEntity siteEntity = createSiteEntity(site.getName(), site.getUrl());
+//        siteRepository.save(siteEntity);
+        SiteService siteService = new SiteService(siteRepository);
+        SiteEntity siteEntity = siteService.addSite(site.getName(), site.getUrl());
 
-        System.out.println("siteEntity: created");
-        System.out.println("Thread: " + Thread.currentThread().getName() + " | indexing site: " + site.getName());
+
+        System.out.println("site: " + siteEntity.getNameSite() + " added to DB");
+
+        System.out.println("thread: " + Thread.currentThread().getName() + " | indexing site: " + siteEntity.getNameSite());
 
         //запускаем индексацию при помощи fork-join
         recursiveIndexingTask = new RecursiveIndexingTask(site.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, storage);
@@ -48,19 +53,21 @@ public class SiteMapThread implements Runnable {
         fjp.invoke(recursiveIndexingTask);
         fjp.shutdown();
 
-        siteEntity.setStatus(StatusType.INDEXED);
-        siteRepository.save(siteEntity);
+        siteService.updateSiteStatusOnIndexed(siteEntity);
+
+//        siteEntity.setStatus(StatusType.INDEXED);
+//        siteRepository.save(siteEntity);
 
         System.out.println("Finish Indexing Site");
     }
 
-    private SiteEntity createSiteEntity(String siteName, String siteUrl) {
-        SiteEntity siteEntity = new SiteEntity();
-        siteEntity.setNameSite(siteName);
-        siteEntity.setUrl(siteUrl);
-        siteEntity.setTime(LocalDateTime.now());
-        siteEntity.setText(null);
-        siteEntity.setStatus(StatusType.INDEXING);
-        return siteEntity;
-    }
+//    private SiteEntity createSiteEntity(String siteName, String siteUrl) {
+//        SiteEntity siteEntity = new SiteEntity();
+//        siteEntity.setNameSite(siteName);
+//        siteEntity.setUrl(siteUrl);
+//        siteEntity.setTime(LocalDateTime.now());
+//        siteEntity.setText(null);
+//        siteEntity.setStatus(StatusType.INDEXING);
+//        return siteEntity;
+//    }
 }

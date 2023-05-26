@@ -40,5 +40,8 @@ public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
     int getCountLemmaBySiteId(int siteId);
     @Query(value = "SELECT site_id FROM lemma WHERE lemma LIKE :lemma", nativeQuery = true)
     List<Integer> getSitesIdByLemma(String lemma);
+    @Query(value = "SELECT lemma FROM lemma WHERE lemma LIKE :lemma AND site_id =:siteId", nativeQuery = true)
+    String getLemmaByLemmaAndSite(String lemma, int siteId);
+
 
 }

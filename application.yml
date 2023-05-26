@@ -18,8 +18,8 @@ indexing-settings:
   sites:
     - url: https://www.playback.ru/
       name: PlayBack.Ru
-#    - url: https://www.svetlovka.ru/
-#      name: Svetlovka.ru
+    - url: https://www.svetlovka.ru/
+      name: Svetlovka.ru
 #    - url: https://dombulgakova.ru/
 #      name: DomBulgakova.ru
     - url: https://domotekhnika.ru/

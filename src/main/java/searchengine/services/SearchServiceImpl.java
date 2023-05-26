@@ -43,7 +43,8 @@ public class SearchServiceImpl implements SearchService {
     public SearchTotalResponse searchOnAllSites(String query) {
 
         System.out.println("search for all sites");
-        List<SearchDataResponse> listMain = new ArrayList<>();
+
+        List<SearchDataResponse> listDataResponse = new ArrayList<>();
 
         //найти все ИД сайтов
         List<Integer> allSitesId = new ArrayList<>();
@@ -52,8 +53,20 @@ public class SearchServiceImpl implements SearchService {
 
         while (iterator.hasNext()) {
             SiteEntity siteEntity = iterator.next();
-            allSitesId.add(siteEntity.getId());
+
+            if (siteContainsAllLemmas(siteEntity.getId(), query) == true) {
+                allSitesId.add(siteEntity.getId());
+            }
         }
+
+        if (allSitesId.isEmpty()) {
+            return new SearchErrorResponse("Ничего не найдено по запросу <b>" + query + "<b>");
+        }
+
+        for (Integer site : allSitesId) {
+            System.out.println("сайт где есть все леммы " + site);
+        }
+
 
         //ищем все леммы по первому сайту
         for (int i = 0; i < allSitesId.size(); i++) {
@@ -61,6 +74,7 @@ public class SearchServiceImpl implements SearchService {
             Map<String, Integer> map1 = getMapLemmaFrequencyForSite(query, siteId);
             map1 = ascendingSortByValue(map1);
             List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(map1, siteId);
+
             int j = 1;
             for (Integer pageId : listPagesId) {
                 System.out.println(j + ". Страницы на которых есть все леммы: page ID: " + pageId);
@@ -68,9 +82,11 @@ public class SearchServiceImpl implements SearchService {
             }
             Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, map1, siteId);
             List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
-            listMain.addAll(list);
+            listDataResponse.addAll(list);
         }
-        SearchTotalResponse searchTotalResponse = getTotalResponse(listMain);
+
+        SearchTotalResponse searchTotalResponse = getTotalResponse(listDataResponse);
+
         return searchTotalResponse;
     }
 
@@ -78,24 +94,31 @@ public class SearchServiceImpl implements SearchService {
     public SearchTotalResponse searchOnOneSite(String site, String query) {
 
         int siteId = siteRepository.getId(site);
-        Map<String, Integer> map = getMapLemmaFrequencyForSite(query, siteId);
-        //сортировка по частоте от редкого слова до популярного
-        Map<String, Integer> mapSort = ascendingSortByValue(map);
-        //создать список страниц, на которых есть все леммы из запроса
-        List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(mapSort, siteId);
 
-        int i = 1;
-        for (Integer pageId : listPagesId) {
-            System.out.println(i + ". Страницы на которых есть все леммы: page ID: " + pageId);
-            i = i + 1;
+        if (siteContainsAllLemmas(siteId, query)) {
+            Map<String, Integer> map = getMapLemmaFrequencyForSite(query, siteId);
+            //сортировка по частоте от редкого слова до популярного
+            Map<String, Integer> mapSort = ascendingSortByValue(map);
+            //создать список страниц, на которых есть все леммы из запроса
+            List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(mapSort, siteId);
+
+            int i = 1;
+            for (Integer pageId : listPagesId) {
+                System.out.println(i + ". Страницы на которых есть все леммы: page ID: " + pageId);
+                i = i + 1;
+            }
+            Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, mapSort, siteId);
+
+            List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
+            SearchTotalResponse searchTotalResponse = getTotalResponse(list);
+
+            return searchTotalResponse;
+        } else {
+            return new SearchErrorResponse("Ничего не найдено по запросу <b>" + query + "<b>");
         }
-        Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, mapSort, siteId);
-
-        List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
-        SearchTotalResponse searchTotalResponse = getTotalResponse(list);
-
-        return searchTotalResponse;
     }
+
+
 
     private List<Integer> getPagesWithAllLemmasOnOneSite(Map<String, Integer> map, int siteId) {
         List<Integer> pagesId = new ArrayList<>();
@@ -118,8 +141,6 @@ public class SearchServiceImpl implements SearchService {
         return pagesId;
     }
 
-
-
     private SearchTotalResponse getTotalResponse(List<SearchDataResponse> list) {
         SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
         searchTotalResponse.setCount(list.size());
@@ -128,54 +149,6 @@ public class SearchServiceImpl implements SearchService {
         return searchTotalResponse;
     }
 
-    private List<Integer> searchPagesWithEachLemma(Map<String, Integer> map) {
-
-        List<Integer> pagesId = new ArrayList<>();
-
-        for (String key : map.keySet()) {
-
-            System.out.println("лемма: " + key + " | частота: " + map.get(key));
-
-            int lemmaId = lemmaRepository.getLemmaId(key);
-
-            List<Integer> lemmasId = lemmaRepository.getLemmaIdByLemma(key);
-
-            for (int i = 0; i < lemmasId.size(); i++) {
-                //добавляем ид страниц в коллекцию
-                if (pagesId.size() == 0) {
-                    //все страницы на которых встречается данная лемма
-                    pagesId = getAllPagesId(lemmaId);
-                } else {
-                    //сверяем список страниц самой редкой леммой, со списком страниц следующей леммы
-                    List<Integer> list = searchForTheSamePages(pagesId, getAllPagesId(lemmaId));
-                    pagesId.clear();
-                    pagesId.addAll(list);
-                }
-            }
-        }
-        return pagesId;
-    }
-
-    //получение списка уникальных лемм и их частоты
-    private Map<String, Integer> getMapLemmaFrequency(String query) {
-
-        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
-
-        try {
-            LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
-            Map<String, Integer> map = lemmaFinder.getLemmaMapWithoutParticles(query);
-
-            for (String key : map.keySet()) {
-                //создаем коллекцию ключ-слово, значение-частота
-                mapLemmaFrequency.put(key, lemmaRepository.getFrequencyByLemma(key));
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return mapLemmaFrequency;
-    }
     private List<SearchDataResponse> getListSearchDataResponse(Map<Integer, Float> map, String query) {
 
         List<SearchDataResponse> list = new ArrayList<>();
@@ -364,7 +337,6 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private Map<String, Integer> getMapLemmaFrequencyForSite(String query, int siteId) {
-
         Map<String, Integer> mapLemmaFrequency = new HashMap<>();
 
         try {
@@ -381,5 +353,37 @@ public class SearchServiceImpl implements SearchService {
         }
 
         return mapLemmaFrequency;
+
+    }
+
+    private boolean siteContainsAllLemmas(Integer siteId, String query) {
+
+        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
+
+        try {
+            LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());
+            Map<String, Integer> map = lemmaFinder.getLemmaMapWithoutParticles(query);
+            int size = map.size();
+            int countWord = 0;
+
+            for (String key : map.keySet()) {
+                //создаем коллекцию ключ-слово, значение-частота
+                //mapLemmaFrequency.put(key, lemmaRepository.getFrequencyByLemmaAndSite(key, siteId));
+
+                if (key.equals(lemmaRepository.getLemmaByLemmaAndSite(key, siteId))) {
+                    countWord = countWord + 1;
+                }
+            }
+
+            if (countWord == size) {
+                System.out.println("все слова есть");
+                return true;
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return false;
     }
 }

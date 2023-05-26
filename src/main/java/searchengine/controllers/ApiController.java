@@ -52,7 +52,4 @@ public class ApiController {
             return ResponseEntity.ok(searchService.searchOnAllSites(query));
         }
     }
-
-
-
 }
