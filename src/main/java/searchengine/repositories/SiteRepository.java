@@ -23,12 +23,8 @@ import searchengine.model.SiteEntity;
 public interface SiteRepository extends CrudRepository<SiteEntity, Integer> {
     @Query(value = "SELECT url FROM site WHERE url LIKE %:name%", nativeQuery = true)
     String contains(String name);
-
     @Query(value = "SELECT id FROM site WHERE url LIKE %:url%", nativeQuery = true)
     int getId(String url);
-
     SiteEntity getByUrl(String url);
-    @Query(value = "SELECT COUNT(*) FROM site", nativeQuery = true)
-    int getCount();
 
 }

@@ -119,7 +119,6 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
-
     private List<Integer> getPagesWithAllLemmasOnOneSite(Map<String, Integer> map, int siteId) {
         List<Integer> pagesId = new ArrayList<>();
 
@@ -247,7 +246,6 @@ public class SearchServiceImpl implements SearchService {
 
         return mapRankRel;
     }
-
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
 
         Map<String, Integer> mapRareLemmas = new HashMap<>();

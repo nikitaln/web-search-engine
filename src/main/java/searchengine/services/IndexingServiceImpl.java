@@ -46,11 +46,9 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
     private FlagStop flagStop;
-
 
     @Override
     public IndexingResponse startIndexing() {
@@ -85,7 +83,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
 
-        System.out.println("INTO STOP");
+        System.out.println("-> STOP-method");
 
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
@@ -128,9 +126,8 @@ public class IndexingServiceImpl implements IndexingService {
             }
 
             LemmaStorage lemmaStorage = new LemmaStorage();
-
             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
-
+            lemmaStorage.clearMapLemmas();
             return new IndexingResponse();
 
             //проверка наличие сайта в конфиге
@@ -159,17 +156,14 @@ public class IndexingServiceImpl implements IndexingService {
                     LemmaStorage lemmaStorage = new LemmaStorage();
                     new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
                     lemmaStorage.clearMapLemmas();
-
                 }
             }
             return new IndexingResponse();
         } else {
-
             return new IndexingErrorResponse("Данная страница находится за пределами сайтов, \n" +
                     "указанных в конфигурационном файле\n");
         }
     }
-
 
     private boolean siteInConfig(String siteUrl) {
 
