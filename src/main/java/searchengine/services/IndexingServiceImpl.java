@@ -6,7 +6,6 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingErrorResponse;
 import searchengine.dto.indexing.IndexingResponse;
-import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
@@ -16,12 +15,11 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.builder.PageIndexing;
 import searchengine.services.sitemap.FlagStop;
+import searchengine.services.sitemap.LemmaStorage;
 import searchengine.services.sitemap.SiteMapThread;
-import searchengine.services.sitemap.Storage;
 import searchengine.services.utils.EditorURL;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -48,9 +46,12 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
+
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
     private FlagStop flagStop;
+
+
     @Override
     public IndexingResponse startIndexing() {
 
@@ -84,7 +85,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
 
-        System.out.println("Вошли в стоп");
+        System.out.println("INTO STOP");
 
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
@@ -95,7 +96,7 @@ public class IndexingServiceImpl implements IndexingService {
                 flagStop.stopRecursiveTask();
                 siteEntity.setStatus(StatusType.FAILED);
                 siteEntity.setTime(LocalDateTime.now());
-                siteEntity.setText("Остановка пользователем");
+                siteEntity.setText("Остановка индексации пользователем");
                 siteRepository.save(siteEntity);
                 return new IndexingResponse();
             }
@@ -126,9 +127,9 @@ public class IndexingServiceImpl implements IndexingService {
                 deletePage(uri);
             }
 
-            Storage storage = new Storage();
+            LemmaStorage lemmaStorage = new LemmaStorage();
 
-            new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
+            new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
 
             return new IndexingResponse();
 
@@ -155,9 +156,9 @@ public class IndexingServiceImpl implements IndexingService {
                     int countLetters = siteEntity.getUrl().length() - 1;
                     uri = url.substring(countLetters);
 
-                    Storage storage = new Storage();
-                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, storage).indexPage();
-                    storage.lemmas.clear();
+                    LemmaStorage lemmaStorage = new LemmaStorage();
+                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
+                    lemmaStorage.clearMapLemmas();
 
                 }
             }

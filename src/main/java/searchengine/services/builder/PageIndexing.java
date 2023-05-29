@@ -1,6 +1,5 @@
 package searchengine.services.builder;
 
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.config.LemmaConfiguration;
@@ -13,36 +12,37 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
-import searchengine.services.sitemap.Storage;
-import searchengine.services.utils.EditorURL;
+import searchengine.services.sitemap.LemmaStorage;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
 public class PageIndexing {
+
     private String uri;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
     private LemmaRepository lemmaRepository;
     private IndexRepository indexRepository;
-    private Storage storage;
+    private LemmaStorage lemmaStorage;
 
-    public PageIndexing(String uri, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, Storage storage) {
+    public PageIndexing(String uri, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, LemmaStorage lemmaStorage) {
         this.uri = uri;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.lemmaRepository = lemmaRepository;
         this.indexRepository = indexRepository;
-        this.storage = storage;
+        this.lemmaStorage = lemmaStorage;
     }
 
     public void indexPage()  {
 
         siteEntity.setTime(LocalDateTime.now());
         siteRepository.save(siteEntity);
+
         String fullUrl = siteEntity.getUrl() + uri.substring(1);
 
 
@@ -54,7 +54,8 @@ public class PageIndexing {
 //            long FINISH_3 = System.currentTimeMillis() - START_3;
 //            System.out.println("\tвремя получения ответа : " + FINISH_3);
 
-            Document doc2 = Jsoup.connect(fullUrl).get();// длительность почти секунда
+            Document doc2 = Jsoup.connect(fullUrl).get(); // длительность почти секунда
+
 
             PageEntity pageEntity = new PageEntity();
             pageEntity.setSite(siteEntity);
@@ -83,10 +84,10 @@ public class PageIndexing {
 
             for (String key : map.keySet()) {
 
-                if (storage.lemmas.containsKey(key)) {
+                if (lemmaStorage.containsKeyMapLemmas(key)) {
 
                     LemmaEntity lemmaEntity = updateLemmaEntity(key);
-                    storage.lemmas.put(key, lemmaEntity);
+                    lemmaStorage.addLemma(key, lemmaEntity);
                     setLemmaEntities.add(lemmaEntity);
 
                     IndexEntity indexEntity = createIndexEntity(lemmaEntity, pageEntity, map.get(key));
@@ -95,7 +96,7 @@ public class PageIndexing {
                 } else {
 
                     LemmaEntity lemmaEntity = createLemmaEntity(key, 1, siteEntity);
-                    storage.lemmas.put(key, lemmaEntity);
+                    lemmaStorage.addLemma(key, lemmaEntity);
                     setLemmaEntities.add(lemmaEntity);
 
                     IndexEntity indexEntity = createIndexEntity(lemmaEntity, pageEntity, map.get(key));
@@ -108,12 +109,10 @@ public class PageIndexing {
             lemmaRepository.saveAll(setLemmaEntities);
             indexRepository.saveAll(setIndexEntities);
 
-            //storage.lemmas.clear();
-
             long finish1 = System.currentTimeMillis() - start1;
-            System.out.println("\tдобавление лемм + индексов  - " + finish1);
+            System.out.println("\ttime: saveAll: " + finish1 + " ms.");
             long finish = System.currentTimeMillis() - start;
-            System.out.println("\t\tдлительность операции с леммами - " + finish + " мс.");
+            System.out.println("\ttime: work with lemmas: " + finish + " ms.");
 
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -134,7 +133,7 @@ public class PageIndexing {
         return lemmaEntity;
     }
     private LemmaEntity updateLemmaEntity(String lemma) {
-        LemmaEntity lemmaEntity = storage.lemmas.get(lemma);
+        LemmaEntity lemmaEntity = lemmaStorage.getLemmaEntity(lemma);
         int count = lemmaEntity.getFrequency();
         lemmaEntity.setFrequency(count + 1);
         return lemmaEntity;

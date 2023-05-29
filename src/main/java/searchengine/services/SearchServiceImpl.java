@@ -39,6 +39,7 @@ public class SearchServiceImpl implements SearchService {
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
+
     @Override
     public SearchTotalResponse searchOnAllSites(String query) {
 
@@ -117,7 +118,6 @@ public class SearchServiceImpl implements SearchService {
             return new SearchErrorResponse("Ничего не найдено по запросу <b>" + query + "<b>");
         }
     }
-
 
 
     private List<Integer> getPagesWithAllLemmasOnOneSite(Map<String, Integer> map, int siteId) {

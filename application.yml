@@ -11,16 +11,16 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
       show-sql: true
 
 indexing-settings:
   sites:
     - url: https://www.playback.ru/
       name: PlayBack.Ru
-    - url: https://www.svetlovka.ru/
-      name: Svetlovka.ru
+#    - url: https://www.svetlovka.ru/
+#      name: Svetlovka.ru
 #    - url: https://dombulgakova.ru/
 #      name: DomBulgakova.ru
-    - url: https://domotekhnika.ru/
-      name: Domotekhnika.ru
+#    - url: https://domotekhnika.ru/
+#      name: Domotekhnika.ru
