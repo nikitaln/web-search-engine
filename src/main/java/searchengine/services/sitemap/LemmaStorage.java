@@ -11,15 +11,12 @@ public class LemmaStorage {
     public void addLemma(String lemma, LemmaEntity lemmaEntity) {
         mapLemmas.put(lemma, lemmaEntity);
     }
-
     public boolean containsKeyMapLemmas(String lemma) {
         return mapLemmas.containsKey(lemma) ? true : false;
     }
-
     public LemmaEntity getLemmaEntity(String lemma) {
         return mapLemmas.get(lemma);
     }
-
     public void clearMapLemmas() {
         mapLemmas.clear();
     }

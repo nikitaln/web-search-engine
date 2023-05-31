@@ -49,13 +49,14 @@ public class SiteMapThread implements Runnable {
         fjp.invoke(recursiveIndexingTask);
         fjp.shutdown();
 
-        if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
+        if (!flagStop.isStopNow()) {
+            System.out.println("Program finished work");
             siteEntity.setStatus(StatusType.INDEXED);
             siteRepository.save(siteEntity);
         }
+
         System.out.println("The end :)");
     }
-
     private SiteEntity createSiteEntity(String siteName, String siteUrl) {
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setNameSite(siteName);
