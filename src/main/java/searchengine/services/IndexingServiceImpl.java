@@ -128,8 +128,8 @@ public class IndexingServiceImpl implements IndexingService {
             }
 
             LemmaStorage lemmaStorage = new LemmaStorage();
-
             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
+            lemmaStorage.clearMapLemmas();
 
             return new IndexingResponse();
 
@@ -145,12 +145,7 @@ public class IndexingServiceImpl implements IndexingService {
 
                 if (siteUrl.equals(site.getUrl())) {
 
-                    SiteEntity siteEntity = new SiteEntity();
-                    siteEntity.setNameSite(site.getName());
-                    siteEntity.setUrl(site.getUrl());
-                    siteEntity.setTime(LocalDateTime.now());
-                    siteEntity.setText(null);
-                    siteEntity.setStatus(StatusType.INDEXING);
+                    SiteEntity siteEntity = createSiteEntity(site.getName(), site.getUrl());
                     siteRepository.save(siteEntity);
 
                     int countLetters = siteEntity.getUrl().length() - 1;
@@ -248,6 +243,15 @@ public class IndexingServiceImpl implements IndexingService {
         if (urlSite.equals(siteRepository.contains(urlSite))) {
             return true;
         } else return false;
+    }
+    private SiteEntity createSiteEntity(String siteName, String siteURL) {
+        SiteEntity siteEntity = new SiteEntity();
+        siteEntity.setNameSite(siteName);
+        siteEntity.setUrl(siteURL);
+        siteEntity.setTime(LocalDateTime.now());
+        siteEntity.setText(null);
+        siteEntity.setStatus(StatusType.INDEXING);
+        return siteEntity;
     }
     private String getSiteUrl(String url) {
 
