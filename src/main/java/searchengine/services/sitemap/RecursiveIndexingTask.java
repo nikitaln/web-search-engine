@@ -3,6 +3,7 @@ package searchengine.services.sitemap;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.config.UserAgent;
 import searchengine.model.SiteEntity;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
@@ -41,12 +42,16 @@ public class RecursiveIndexingTask extends RecursiveAction {
         if (!flagStop.isStopNow()) {
             ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
             try {
-                Document doc = Jsoup.connect(url).get();
+                UserAgent userAgent = new UserAgent();
+                Document doc = Jsoup.connect(url)
+                        .userAgent(userAgent.getUSER_AGENT())
+                        .referrer(userAgent.getREFERRER())
+                        .get();
                 Elements elements = doc.select("a");
                 elements.forEach(element -> {
                     if (!flagStop.isStopNow()) {
                         String newURL = element.absUrl("href");
-                        if (isDomainUrl(newURL)) {
+                        if (isDomainURL(newURL)) {
                             String uri = getURI(newURL);
                             synchronized (pageRepository) {
                                 if (!containsInDB(uri)) {
@@ -84,7 +89,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
             return false;
         }
     }
-    private boolean isDomainUrl(String url) {
+    private boolean isDomainURL(String url) {
         if (url.startsWith(siteEntity.getUrl())
                 && !url.contains("#")
                 && !url.contains("jpg")

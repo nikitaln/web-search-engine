@@ -20,8 +20,4 @@ public class LemmaStorage {
     public void clearMapLemmas() {
         mapLemmas.clear();
     }
-
-
-
-
 }

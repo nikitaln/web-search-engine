@@ -46,6 +46,7 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
+
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
     private FlagStop flagStop;
@@ -128,10 +129,7 @@ public class IndexingServiceImpl implements IndexingService {
             LemmaStorage lemmaStorage = new LemmaStorage();
             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
             lemmaStorage.clearMapLemmas();
-<<<<<<< HEAD
 
-=======
->>>>>>> 9dcd916ae158d4e25bcbe1a7777062676baa59a8
             return new IndexingResponse();
 
             //проверка наличие сайта в конфиге
