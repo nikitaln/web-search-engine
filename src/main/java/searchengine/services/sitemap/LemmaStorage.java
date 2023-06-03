@@ -20,4 +20,7 @@ public class LemmaStorage {
     public void clearMapLemmas() {
         mapLemmas.clear();
     }
+    public int getSizeMapLemmas() {
+        return mapLemmas.size();
+    }
 }

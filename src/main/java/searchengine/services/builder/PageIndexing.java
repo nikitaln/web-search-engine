@@ -28,6 +28,8 @@ public class PageIndexing {
     private IndexRepository indexRepository;
     private LemmaStorage lemmaStorage;
 
+    private final static Object lock = new Object();
+
     public PageIndexing(String uri, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, LemmaStorage lemmaStorage) {
         this.uri = uri;
         this.siteEntity = siteEntity;
@@ -48,14 +50,7 @@ public class PageIndexing {
 
         try {
 
-//            long START_3 = System.currentTimeMillis();
-//            Connection.Response response = Jsoup.connect(fullUrl).followRedirects(false).execute();
-//            System.out.println(response.statusCode() + " : " + response.url());
-//            long FINISH_3 = System.currentTimeMillis() - START_3;
-//            System.out.println("\tвремя получения ответа : " + FINISH_3);
-
             Document doc2 = Jsoup.connect(fullUrl).get(); // длительность почти секунда
-
 
             PageEntity pageEntity = new PageEntity();
             pageEntity.setSite(siteEntity);
@@ -106,13 +101,28 @@ public class PageIndexing {
 
             long start1 = System.currentTimeMillis();
 
+            long start2 = System.currentTimeMillis();
             lemmaRepository.saveAll(setLemmaEntities);
+            long finish2 = System.currentTimeMillis() - start2;
+
+
+            long start3 = System.currentTimeMillis();
             indexRepository.saveAll(setIndexEntities);
+            long finish3 = System.currentTimeMillis() - start3;
+
+            setLemmaEntities.clear();
+            setIndexEntities.clear();
 
             long finish1 = System.currentTimeMillis() - start1;
             System.out.println("\ttime: saveAll: " + finish1 + " ms.");
+            System.out.println("\t\ttime: saveLemma: " + finish2 + " ms.");
+            System.out.println("\t\ttime: saveIndex: " + finish3 + " ms.");
+
             long finish = System.currentTimeMillis() - start;
             System.out.println("\ttime: work with lemmas: " + finish + " ms.");
+
+            System.out.println("size setLemma: " + setLemmaEntities.size() + " | size setIndex: " + setIndexEntities.size());
+            System.out.println("size LemmaStorage: " + lemmaStorage.getSizeMapLemmas());
 
         } catch (IOException e) {
             throw new RuntimeException(e);
