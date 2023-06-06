@@ -1,6 +1,8 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
@@ -50,9 +52,12 @@ public class IndexingServiceImpl implements IndexingService {
     private SiteMapThread siteMapThread;
     private ExecutorService executorService;
     private FlagStop flagStop;
+    private Logger logger = LogManager.getLogger(IndexingServiceImpl.class);
 
     @Override
     public IndexingResponse startIndexing() {
+
+        logger.info("Start indexing sites");
 
         flagStop = new FlagStop();
 
@@ -61,22 +66,38 @@ public class IndexingServiceImpl implements IndexingService {
         for (int i = 0; i < sitesList.size(); i++) {
 
             Site site = sitesList.get(i);
+
+            logger.info("Indexing site URL: " + site.getUrl());
+
             if (siteContainsInDB(site.getUrl())) {
 
+                logger.info("Site in DB: " + site.getUrl());
+
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
+
                 if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
 
+                    logger.info("Site: " + site.getUrl() + " is Indexing now");
+
                     return new IndexingErrorResponse("Индексация уже запущена");
+
                 } else {
 
+                    logger.info("Site: " + site.getUrl() + " indexed, and will be deleted");
+
                     siteRepository.delete(siteEntity);
+
+                    logger.info("Site: " + site.getUrl() + " deleted");
+
                 }
             }
 
             executorService = Executors.newSingleThreadExecutor();
             siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
+            logger.info("Start indexing site: " + site.getUrl());
             executorService.execute(siteMapThread);
             executorService.shutdown();
+            logger.info("Finished indexing site: " + site.getUrl());
 
         }
         return new IndexingResponse();
@@ -84,7 +105,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
 
-        System.out.println("-> STOP-method");
+        logger.info("Process of stopping site indexing");
 
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
