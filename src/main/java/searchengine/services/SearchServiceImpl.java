@@ -67,7 +67,7 @@ public class SearchServiceImpl implements SearchService {
 
         if (allSitesId.isEmpty()) {
 
-            return new SearchErrorResponse("Ничего не найдено по запросу <b>" + query + "<b>");
+            return new SearchErrorResponse("Ничего не найдено по запросу: " + query);
         }
 
         for (Integer site : allSitesId) {
