@@ -5,6 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import searchengine.model.LemmaEntity;
+import searchengine.model.SiteEntity;
 
 import java.util.List;
 
@@ -45,4 +46,6 @@ public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
     @Query(value = "SELECT lemma FROM lemma WHERE lemma LIKE :lemma AND site_id =:siteId", nativeQuery = true)
     String getLemmaByLemmaAndSite(String lemma, int siteId);
 
+
+    List<LemmaEntity> findBySiteEntity(SiteEntity siteEntity);
 }

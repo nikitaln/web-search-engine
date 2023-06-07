@@ -22,12 +22,13 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
-    private final SitesList sites;
+
     private final SiteRepository siteRepository;
+
     private final PageRepository pageRepository;
+
     private final LemmaRepository lemmaRepository;
 
-    //Вместо обращения к конфигурации нужно обращаться к БД
 
     @Override
     public StatisticsResponse getStatistics() {

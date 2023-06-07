@@ -35,10 +35,15 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
+
     private final LemmaRepository lemmaRepository;
+
     private final PageRepository pageRepository;
+
     private final IndexRepository indexRepository;
+
     private final SiteRepository siteRepository;
+
 
     @Override
     public SearchTotalResponse searchOnAllSites(String query) {
@@ -61,10 +66,12 @@ public class SearchServiceImpl implements SearchService {
         }
 
         if (allSitesId.isEmpty()) {
+
             return new SearchErrorResponse("Ничего не найдено по запросу <b>" + query + "<b>");
         }
 
         for (Integer site : allSitesId) {
+
             System.out.println("сайт где есть все леммы " + site);
         }
 
@@ -78,6 +85,7 @@ public class SearchServiceImpl implements SearchService {
 
             int j = 1;
             for (Integer pageId : listPagesId) {
+
                 System.out.println(j + ". Страницы на которых есть все леммы: page ID: " + pageId);
                 j = j + 1;
             }
@@ -370,8 +378,6 @@ public class SearchServiceImpl implements SearchService {
 
 
     private boolean siteContainsAllLemmas(Integer siteId, String query) {
-
-        Map<String, Integer> mapLemmaFrequency = new HashMap<>();
 
         try {
             LemmaFinder lemmaFinder = new LemmaFinder(new LemmaConfiguration().luceneMorphology());

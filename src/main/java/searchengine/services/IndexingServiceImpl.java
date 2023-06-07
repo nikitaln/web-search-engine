@@ -24,6 +24,7 @@ import searchengine.services.utils.EditorURL;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -149,8 +150,10 @@ public class IndexingServiceImpl implements IndexingService {
                 deletePage(uri);
             }
 
-            LemmaStorage lemmaStorage = new LemmaStorage();
+            LemmaStorage lemmaStorage = getLemmaStorage(siteEntity);
+
             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
+
             lemmaStorage.clearMapLemmas();
 
             return new IndexingResponse();
@@ -178,7 +181,9 @@ public class IndexingServiceImpl implements IndexingService {
                     lemmaStorage.clearMapLemmas();
                 }
             }
+
             return new IndexingResponse();
+
         } else {
             return new IndexingErrorResponse("Данная страница находится за пределами сайтов, \n" +
                     "указанных в конфигурационном файле\n");
@@ -323,6 +328,22 @@ public class IndexingServiceImpl implements IndexingService {
             // Preserve interrupt status
             Thread.currentThread().interrupt();
         }
+    }
+
+
+    private LemmaStorage getLemmaStorage(SiteEntity siteEntity) {
+
+        LemmaStorage lemmaStorage = new LemmaStorage();
+
+        List<LemmaEntity> list = lemmaRepository.findBySiteEntity(siteEntity);
+
+        for (LemmaEntity lemma : list) {
+
+            lemmaStorage.addLemma(lemma.getLemma(), lemma);
+
+        }
+
+        return lemmaStorage;
     }
 
 }
