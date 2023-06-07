@@ -23,12 +23,17 @@ import java.util.List;
 
 @Repository
 public interface IndexRepository extends CrudRepository<IndexEntity, Integer> {
+
+
     @Query(value = "SELECT `lemma_id` FROM `index` WHERE `page_id` = :pageId", nativeQuery = true)
     List<Integer> getAllLemmaId(int pageId);
+
 
     @Query(value = "SELECT `page_id` FROM `index` WHERE `lemma_id` = :lemmaId", nativeQuery = true)
     List<Integer> getAllPagesIdByLemmaId(int lemmaId);
 
+
     @Query(value = "SELECT `rank` FROM `index` WHERE `lemma_id` = :lemmaId AND `page_id` = :pageId", nativeQuery = true)
     float getRankByLemmaIdAndPageId(int lemmaId, int pageId);
+
 }

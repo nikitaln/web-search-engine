@@ -7,6 +7,7 @@ import java.util.List;
 @Entity
 @Table(name = "`Page`", indexes = @Index(columnList = "path"))
 public class PageEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -26,6 +27,7 @@ public class PageEntity {
 
     @OneToMany(mappedBy = "pageEntity", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<IndexEntity> indexEntityList = new ArrayList<>();
+
 
     public int getId() {
         return id;

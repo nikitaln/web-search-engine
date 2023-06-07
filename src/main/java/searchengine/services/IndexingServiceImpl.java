@@ -102,6 +102,7 @@ public class IndexingServiceImpl implements IndexingService {
         }
         return new IndexingResponse();
     }
+
     @Override
     public IndexingResponse stopIndexing() {
 
@@ -126,6 +127,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         return new IndexingErrorResponse("Индексация не запущена");
     }
+
     @Override
     public IndexingResponse indexPage(String url) {
 
@@ -183,6 +185,7 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
+
     private boolean siteInConfig(String siteUrl) {
 
         List<Site> sitesList = sites.getSites();
@@ -213,6 +216,8 @@ public class IndexingServiceImpl implements IndexingService {
 //        }
 //        return false;
     }
+
+
     private void deletePage(String url) {
 
         if (url.equals(pageRepository.contains(url))) {
@@ -230,12 +235,16 @@ public class IndexingServiceImpl implements IndexingService {
             }
         }
     }
+
+
     private boolean pageContainsInDB(String url) {
 
         if (url.equals(pageRepository.contains(url))) {
             return true;
         } else return false;
     }
+
+
     private boolean siteContainsInDB(String urlSite) {
 
 //        int countSite = siteRepository.getCount();
@@ -261,6 +270,8 @@ public class IndexingServiceImpl implements IndexingService {
             return true;
         } else return false;
     }
+
+
     private SiteEntity createSiteEntity(String siteName, String siteURL) {
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setNameSite(siteName);
@@ -270,6 +281,8 @@ public class IndexingServiceImpl implements IndexingService {
         siteEntity.setStatus(StatusType.INDEXING);
         return siteEntity;
     }
+
+
     private String getSiteUrl(String url) {
 
         String siteUrl = "";
@@ -290,6 +303,8 @@ public class IndexingServiceImpl implements IndexingService {
         }
         return siteUrl;
     }
+
+
     private void shutdownAndAwaitTermination(ExecutorService pool) {
         // Disable new tasks from being submitted
         pool.shutdown();

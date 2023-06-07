@@ -22,12 +22,20 @@ import searchengine.model.PageEntity;
  */
 @Repository
 public interface PageRepository extends CrudRepository<PageEntity, Integer> {
+
+
     @Query(value = "SELECT path FROM page WHERE path LIKE :link", nativeQuery = true)
     String contains(String link);
+
+
     @Query(value = "SELECT id FROM page WHERE path LIKE %:url%", nativeQuery = true)
     int getId(String url);
+
+
     @Query(value = "SELECT COUNT(*) FROM page", nativeQuery = true)
     int getCount();
+
+
     @Query(value = "SELECT COUNT(*) FROM page WHERE site_id = :siteId", nativeQuery = true)
     int getCountPagesBySiteId(int siteId);
 

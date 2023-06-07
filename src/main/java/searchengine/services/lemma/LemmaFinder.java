@@ -5,13 +5,17 @@ import org.apache.lucene.morphology.LuceneMorphology;
 import java.util.*;
 
 public class LemmaFinder {
+
+
     private final LuceneMorphology luceneMorphology;
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "ЧАСТ"};
 
+
     public LemmaFinder(LuceneMorphology luceneMorphology) {
         this.luceneMorphology = luceneMorphology;
     }
+
 
     //Основной метод начало получения леммы слов из текста
     public Map<String, Integer> getLemmaMapWithParticles(String text) {
@@ -54,6 +58,7 @@ public class LemmaFinder {
         return lemmas;
         }
 
+
     public Map<String, Integer> getLemmaMapWithoutParticles(String text) {
 
         String[] textArray = arrayContainsRussianWords(text);
@@ -83,9 +88,11 @@ public class LemmaFinder {
         return lemmaMap;
     }
 
+
     private boolean anyWordBaseBelongToParticle(List<String> wordBaseForms) {
         return wordBaseForms.stream().anyMatch(this::hasParticleProperty);
     }
+
 
     //проверяем является ли слово - частицей
     private boolean hasParticleProperty(String wordBase) {
@@ -98,6 +105,7 @@ public class LemmaFinder {
         return false;
     }
 
+
     //получение массива русских слов из переданного текста
     private String[] arrayContainsRussianWords(String text) {
         return text.toLowerCase(Locale.ROOT)
@@ -105,6 +113,7 @@ public class LemmaFinder {
                 .trim()
                 .split("\\s+");
     }
+
 
     private boolean isCorrectWordForm(String word) {
         List<String> wordInfo = luceneMorphology.getMorphInfo(word);
@@ -115,6 +124,7 @@ public class LemmaFinder {
         }
         return true;
     }
+
 
     public String deleteHtmlTags(String html) {
         String regex = "[^А-Яа-я\\s]";

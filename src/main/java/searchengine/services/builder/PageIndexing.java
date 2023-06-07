@@ -20,6 +20,7 @@ import java.util.*;
 
 public class PageIndexing {
 
+
     private String uri;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
@@ -28,7 +29,9 @@ public class PageIndexing {
     private IndexRepository indexRepository;
     private LemmaStorage lemmaStorage;
 
+
     private final static Object lock = new Object();
+
 
     public PageIndexing(String uri, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, LemmaStorage lemmaStorage) {
         this.uri = uri;
@@ -39,6 +42,7 @@ public class PageIndexing {
         this.indexRepository = indexRepository;
         this.lemmaStorage = lemmaStorage;
     }
+
 
     public void indexPage()  {
 
@@ -65,6 +69,7 @@ public class PageIndexing {
             throw new RuntimeException(e);
         }
     }
+
 
     private void saveLemmaAndIndex(String codeHTML, PageEntity pageEntity) {
 
@@ -128,6 +133,8 @@ public class PageIndexing {
             throw new RuntimeException(e);
         }
     }
+
+
     private IndexEntity createIndexEntity(LemmaEntity lemmaEntity, PageEntity pageEntity, int countLemma) {
         IndexEntity indexEntity = new IndexEntity();
         indexEntity.setLemmaEntity(lemmaEntity);
@@ -135,6 +142,8 @@ public class PageIndexing {
         indexEntity.setRank(countLemma);
         return indexEntity;
     }
+
+
     private LemmaEntity createLemmaEntity(String lemma, int frequency, SiteEntity siteEntity) {
         LemmaEntity lemmaEntity = new LemmaEntity();
         lemmaEntity.setLemma(lemma);
@@ -142,6 +151,8 @@ public class PageIndexing {
         lemmaEntity.setSiteEntity(siteEntity);
         return lemmaEntity;
     }
+
+
     private LemmaEntity updateLemmaEntity(String lemma) {
         LemmaEntity lemmaEntity = lemmaStorage.getLemmaEntity(lemma);
         int count = lemmaEntity.getFrequency();

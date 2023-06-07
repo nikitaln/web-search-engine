@@ -1,7 +1,6 @@
 package searchengine.model;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +8,7 @@ import java.util.List;
 @Entity
 @Table(name = "Site")
 public class SiteEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
@@ -16,6 +16,7 @@ public class SiteEntity {
     @Column(name = "status", nullable = true)
     @Enumerated(EnumType.STRING)
     private StatusType status;
+
     @Column(name = "status_time", columnDefinition = "DATETIME NOT NULL")
     private LocalDateTime time;
 

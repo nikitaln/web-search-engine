@@ -91,6 +91,7 @@ public class SearchServiceImpl implements SearchService {
         return searchTotalResponse;
     }
 
+
     @Override
     public SearchTotalResponse searchOnOneSite(String site, String query) {
 
@@ -119,6 +120,7 @@ public class SearchServiceImpl implements SearchService {
         }
     }
 
+
     private List<Integer> getPagesWithAllLemmasOnOneSite(Map<String, Integer> map, int siteId) {
         List<Integer> pagesId = new ArrayList<>();
 
@@ -140,6 +142,7 @@ public class SearchServiceImpl implements SearchService {
         return pagesId;
     }
 
+
     private SearchTotalResponse getTotalResponse(List<SearchDataResponse> list) {
         SearchTotalResponse searchTotalResponse = new SearchTotalResponse();
         searchTotalResponse.setCount(list.size());
@@ -147,6 +150,7 @@ public class SearchServiceImpl implements SearchService {
         searchTotalResponse.setData(list);
         return searchTotalResponse;
     }
+
 
     private List<SearchDataResponse> getListSearchDataResponse(Map<Integer, Float> map, String query) {
 
@@ -170,6 +174,7 @@ public class SearchServiceImpl implements SearchService {
         return list;
     }
 
+
     //сортировка по возрастанию значения частоты
     private Map<String, Integer> ascendingSortByValue(Map<String, Integer> map) {
 
@@ -186,6 +191,7 @@ public class SearchServiceImpl implements SearchService {
         return map;
     }
 
+
     //получение всех Id страниц на которых содержится данная лемма
     private List<Integer> getAllPagesId(int LemmaId) {
 
@@ -194,6 +200,7 @@ public class SearchServiceImpl implements SearchService {
 
         return listPagesId;
     }
+
 
     private List<Integer> searchForTheSamePages(List<Integer> listOld, List<Integer> listNew) {
 
@@ -206,6 +213,7 @@ public class SearchServiceImpl implements SearchService {
         }
         return list1;
     }
+
 
     private Map<Integer, Float> countRank(List<Integer> list, Map<String, Integer> map, int siteId) {
 
@@ -246,6 +254,8 @@ public class SearchServiceImpl implements SearchService {
 
         return mapRankRel;
     }
+
+
     private Map<String, Integer> deletePopularLemma(Map<String, Integer> map) {
 
         Map<String, Integer> mapRareLemmas = new HashMap<>();
@@ -263,6 +273,7 @@ public class SearchServiceImpl implements SearchService {
         return mapRareLemmas;
     }
 
+
     private Map<Integer, Float> descendingSortRelevance(Map<Integer, Float> map) {
 
         Map<Integer, Float> result = map.entrySet()
@@ -274,6 +285,7 @@ public class SearchServiceImpl implements SearchService {
                         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
         return result;
     }
+
 
     //получили html код страницы и нужно его пропарсить
     private String searchSnippet(String html, String query) {
@@ -317,6 +329,7 @@ public class SearchServiceImpl implements SearchService {
         return stringBuilder.toString();
     }
 
+
     public String getTitleFromHtmlCode(String html) {
 
         System.out.println("Зашли в метод");
@@ -333,6 +346,7 @@ public class SearchServiceImpl implements SearchService {
         }
         return citation;
     }
+
 
     private Map<String, Integer> getMapLemmaFrequencyForSite(String query, int siteId) {
         Map<String, Integer> mapLemmaFrequency = new HashMap<>();
@@ -353,6 +367,7 @@ public class SearchServiceImpl implements SearchService {
         return mapLemmaFrequency;
 
     }
+
 
     private boolean siteContainsAllLemmas(Integer siteId, String query) {
 

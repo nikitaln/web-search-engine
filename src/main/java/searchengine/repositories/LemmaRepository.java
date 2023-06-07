@@ -24,16 +24,25 @@ import java.util.List;
 
 @Repository
 public interface LemmaRepository extends CrudRepository<LemmaEntity, Integer> {
+
+
     @Query(value = "SELECT lemma FROM lemma WHERE lemma LIKE :word", nativeQuery = true)
     String contains(String word);
+
+
     @Query(value = "SELECT id FROM lemma WHERE lemma LIKE :word AND site_id = :siteId", nativeQuery = true)
     int getLemmaIdOnSiteId(String word, int siteId);
+
+
     @Query(value = "SELECT frequency FROM lemma WHERE lemma LIKE :word AND site_id = :siteId", nativeQuery = true)
     int getFrequencyByLemmaAndSite(String word, int siteId);
+
+
     @Query(value = "SELECT COUNT(*) FROM lemma WHERE site_id = :siteId", nativeQuery = true)
     int getCountLemmaBySiteId(int siteId);
+
+
     @Query(value = "SELECT lemma FROM lemma WHERE lemma LIKE :lemma AND site_id =:siteId", nativeQuery = true)
     String getLemmaByLemmaAndSite(String lemma, int siteId);
-
 
 }

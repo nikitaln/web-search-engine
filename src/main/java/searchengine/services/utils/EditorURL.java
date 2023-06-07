@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 public class EditorURL {
 
+
     public String getSiteURL(String url) {
 
         String siteURL = "";
@@ -24,11 +25,15 @@ public class EditorURL {
         }
         return siteURL;
     }
+
+
     public void deleteSite(String url) {
         String site = "https://www.playback.ru/";
         String newUrl = url.substring(site.length()-1);
         System.out.println(newUrl);
     }
+
+
     public void getTitleFromHtmlCode(String html) {
 
         System.out.println("Зашли в метод");
@@ -42,6 +47,7 @@ public class EditorURL {
             System.out.println(citation);
         }
     }
+
 
     public void containsSite(String url) {
 
@@ -60,6 +66,7 @@ public class EditorURL {
             }
         }
     }
+
 
     public String removeEmojiFromText(String text) {
 
