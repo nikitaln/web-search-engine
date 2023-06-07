@@ -61,41 +61,31 @@ public class IndexingServiceImpl implements IndexingService {
         logger.info("Start indexing sites");
 
         flagStop = new FlagStop();
-
         List<Site> sitesList = sites.getSites();
 
         for (int i = 0; i < sitesList.size(); i++) {
-
             Site site = sitesList.get(i);
-
-            logger.info("Indexing site URL: " + site.getUrl());
+            logger.info("Indexing site with URL: " + site.getUrl());
 
             if (siteContainsInDB(site.getUrl())) {
-
-                logger.info("Site in DB: " + site.getUrl());
-
+                logger.info("Site: "  + site.getUrl() + " contains in database");
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
-
+                logger.info("Check status site");
                 if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
-
-                    logger.info("Site: " + site.getUrl() + " is Indexing now");
-
+                    logger.info(site.getUrl() + " site is indexing at that moment");
                     return new IndexingErrorResponse("Индексация уже запущена");
 
                 } else {
-
-                    logger.info("Site: " + site.getUrl() + " indexed, and will be deleted");
-
+                    logger.info(site.getUrl() + " site indexed, and will be deleted");
                     siteRepository.delete(siteEntity);
-
-                    logger.info("Site: " + site.getUrl() + " deleted");
+                    logger.info(site.getUrl() + " deleted");
 
                 }
             }
 
             executorService = Executors.newSingleThreadExecutor();
             siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
-            logger.info("Start indexing site: " + site.getUrl());
+            logger.info(site.getUrl() + " start indexing in new thread");
             executorService.execute(siteMapThread);
             executorService.shutdown();
             logger.info("Finished indexing site: " + site.getUrl());
@@ -107,14 +97,14 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
 
-        logger.info("Process of stopping site indexing");
-
+        logger.info("Start process of stopping site indexing");
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
         while (iterator.hasNext()) {
 
             SiteEntity siteEntity = iterator.next();
             if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
+                logger.info(siteEntity.getUrl() + " indexing stopped");
                 flagStop.stopRecursiveTask();
                 siteEntity.setStatus(StatusType.FAILED);
                 siteEntity.setTime(LocalDateTime.now());
@@ -125,6 +115,7 @@ public class IndexingServiceImpl implements IndexingService {
         }
 
         executorService.shutdown();
+        logger.info("Process of stopping sites indexing finished");
 
         return new IndexingErrorResponse("Индексация не запущена");
     }
