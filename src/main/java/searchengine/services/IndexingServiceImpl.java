@@ -74,12 +74,10 @@ public class IndexingServiceImpl implements IndexingService {
                 if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
                     logger.info(site.getUrl() + " site is indexing at that moment");
                     return new IndexingErrorResponse("Индексация уже запущена");
-
                 } else {
                     logger.info(site.getUrl() + " site indexed, and will be deleted");
                     siteRepository.delete(siteEntity);
                     logger.info(site.getUrl() + " deleted");
-
                 }
             }
 
@@ -88,8 +86,6 @@ public class IndexingServiceImpl implements IndexingService {
             logger.info(site.getUrl() + " start indexing in new thread");
             executorService.execute(siteMapThread);
             executorService.shutdown();
-            logger.info("Finished indexing site: " + site.getUrl());
-
         }
         return new IndexingResponse();
     }
