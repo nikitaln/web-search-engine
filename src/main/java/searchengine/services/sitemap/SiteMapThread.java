@@ -21,8 +21,10 @@ public class SiteMapThread implements Runnable {
     private PageRepository pageRepository;
     private LemmaRepository lemmaRepository;
     private IndexRepository indexRepository;
-    private ForkJoinPool fjp;
     private FlagStop flagStop;
+
+
+    private ForkJoinPool fjp;
     private RecursiveIndexingTask recursiveIndexingTask;
     private LemmaStorage lemmaStorage = new LemmaStorage();
 
@@ -36,7 +38,6 @@ public class SiteMapThread implements Runnable {
         this.indexRepository = indexRepository;
         this.flagStop = flagStop;
     }
-
 
 
     @Override
@@ -66,6 +67,8 @@ public class SiteMapThread implements Runnable {
 
         System.out.println("The end :)");
     }
+
+
     private SiteEntity createSiteEntity(String siteName, String siteUrl) {
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setNameSite(siteName);

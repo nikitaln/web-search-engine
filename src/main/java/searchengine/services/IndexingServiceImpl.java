@@ -93,7 +93,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse stopIndexing() {
 
-        logger.info("Start process of stopping site indexing");
+        logger.info("Start process of stopping sites indexing");
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
         while (iterator.hasNext()) {
@@ -119,53 +119,49 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public IndexingResponse indexPage(String url) {
 
-        // url - https://www.playback.ru/catalog/1141.html
-        // uri - /catalog/1141.html
-        String uri = "";
-
+        logger.info("Index page: " + url);
         EditorURL editorURL = new EditorURL();
         String siteUrl = editorURL.getSiteURL(url);
 
         if (siteContainsInDB(siteUrl)) {
 
+            logger.info("Site: " + siteUrl + " on database");
             SiteEntity siteEntity = siteRepository.getByUrl(siteUrl);
-            //проверить наличие ссылки в Таблице page
-            int countLetters = siteEntity.getUrl().length() - 1;
-            uri = url.substring(countLetters);
+            String uri = getURIFromURL(url, siteEntity);
 
             if (pageContainsInDB(uri)) {
+                logger.info("Page: " + url + " on database");
                 deletePage(uri);
+                logger.info("Page: " + url + " deleted and will be index again");
             }
 
             LemmaStorage lemmaStorage = getLemmaStorage(siteEntity);
-
             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
-
             lemmaStorage.clearMapLemmas();
+            logger.info("Page: " + url + " indexed and added to database");
 
             return new IndexingResponse();
 
-            //проверка наличие сайта в конфиге
         } else if (siteInConfig(siteUrl)) {
 
+            logger.info("Site: " + siteUrl + " in configuration file");
             List<Site> sitesList = sites.getSites();
 
             for (int i=0; i < sitesList.size(); i++) {
 
-                //создали объект site с полями name и url
                 Site site = sitesList.get(i);
 
                 if (siteUrl.equals(site.getUrl())) {
 
                     SiteEntity siteEntity = createSiteEntity(site.getName(), site.getUrl());
                     siteRepository.save(siteEntity);
+                    logger.info("Site: " + site + " added to database");
 
-                    int countLetters = siteEntity.getUrl().length() - 1;
-                    uri = url.substring(countLetters);
-
+                    String uri = getURIFromURL(url, siteEntity);
                     LemmaStorage lemmaStorage = new LemmaStorage();
                     new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage).indexPage();
                     lemmaStorage.clearMapLemmas();
+                    logger.info("Page: " + url + " indexed and added to database");
                 }
             }
 
@@ -275,6 +271,30 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
 
+    private LemmaStorage getLemmaStorage(SiteEntity siteEntity) {
+
+        LemmaStorage lemmaStorage = new LemmaStorage();
+
+        List<LemmaEntity> list = lemmaRepository.findBySiteEntity(siteEntity);
+
+        for (LemmaEntity lemma : list) {
+
+            lemmaStorage.addLemma(lemma.getLemma(), lemma);
+
+        }
+
+        return lemmaStorage;
+    }
+
+
+    private String getURIFromURL(String url, SiteEntity siteEntity) {
+        String uri = "";
+        int countLetters = siteEntity.getUrl().length() - 1;
+        uri = url.substring(countLetters);
+        return uri;
+    }
+
+
     private String getSiteUrl(String url) {
 
         String siteUrl = "";
@@ -317,20 +337,5 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
-
-    private LemmaStorage getLemmaStorage(SiteEntity siteEntity) {
-
-        LemmaStorage lemmaStorage = new LemmaStorage();
-
-        List<LemmaEntity> list = lemmaRepository.findBySiteEntity(siteEntity);
-
-        for (LemmaEntity lemma : list) {
-
-            lemmaStorage.addLemma(lemma.getLemma(), lemma);
-
-        }
-
-        return lemmaStorage;
-    }
 
 }

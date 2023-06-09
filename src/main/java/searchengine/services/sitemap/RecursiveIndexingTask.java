@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.concurrent.RecursiveAction;
 
 public class RecursiveIndexingTask extends RecursiveAction {
+
     private String url;
     private SiteEntity siteEntity;
     private SiteRepository siteRepository;
@@ -25,8 +26,10 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private IndexRepository indexRepository;
     private FlagStop flagStop;
     private LemmaStorage lemmaStorage;
+
     private UserAgent userAgent = new UserAgent();
     private final static Object lock = new Object();
+
 
     public RecursiveIndexingTask(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop, LemmaStorage lemmaStorage) {
         this.url = url;
@@ -38,6 +41,8 @@ public class RecursiveIndexingTask extends RecursiveAction {
         this.flagStop = flagStop;
         this.lemmaStorage = lemmaStorage;
     }
+
+
     @Override
     protected void compute() {
 
@@ -85,6 +90,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
         }
     }
 
+
     private boolean containsInDB(String url) {
         if (url.equals(pageRepository.contains(url))) {
             return true;
@@ -92,6 +98,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
             return false;
         }
     }
+
 
     private boolean isDomainURL(String url) {
         if (url.startsWith(siteEntity.getUrl())
@@ -108,6 +115,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
             return false;
         }
     }
+
 
     private String getURI(String url) {
         int countLetters = siteEntity.getUrl().length() - 1;
