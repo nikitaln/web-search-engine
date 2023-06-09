@@ -94,26 +94,30 @@ public class IndexingServiceImpl implements IndexingService {
     public IndexingResponse stopIndexing() {
 
         logger.info("Start process of stopping sites indexing");
+        int countIndexingSite = 0;
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
         while (iterator.hasNext()) {
 
             SiteEntity siteEntity = iterator.next();
             if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
+                countIndexingSite = countIndexingSite + 1;
                 logger.info(siteEntity.getUrl() + " indexing stopped");
                 flagStop.stopRecursiveTask();
                 siteEntity.setStatus(StatusType.FAILED);
                 siteEntity.setTime(LocalDateTime.now());
                 siteEntity.setText("Остановка индексации пользователем");
                 siteRepository.save(siteEntity);
-                return new IndexingResponse();
             }
+        }
+
+        if (countIndexingSite == 0) {
+            return new IndexingErrorResponse("Индексация не запущена");
         }
 
         executorService.shutdown();
         logger.info("Process of stopping sites indexing finished");
-
-        return new IndexingErrorResponse("Индексация не запущена");
+        return new IndexingResponse();
     }
 
     @Override
