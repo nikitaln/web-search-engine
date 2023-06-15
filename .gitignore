@@ -5,6 +5,7 @@ application.yml
 !**/src/main/**/target/
 !**/src/test/**/target/
 logs/
+.DS_Store
 
 ### STS ###
 .apt_generated

@@ -27,7 +27,6 @@ public class SiteMapThread implements Runnable {
     private ForkJoinPool fjp;
     private RecursiveIndexingTask recursiveIndexingTask;
     private LemmaStorage lemmaStorage = new LemmaStorage();
-
     private Logger logger = LogManager.getLogger(SiteMapThread.class);
 
     public SiteMapThread(Site site, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop) {
@@ -53,7 +52,8 @@ public class SiteMapThread implements Runnable {
 
         logger.info("Start ForkJoinPool");
         //запускаем индексацию при помощи fork-join
-        recursiveIndexingTask = new RecursiveIndexingTask(site.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage);
+        Object lock = new Object();
+        recursiveIndexingTask = new RecursiveIndexingTask(site.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage, lock);
 
         fjp = new ForkJoinPool(4);
         fjp.invoke(recursiveIndexingTask);

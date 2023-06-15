@@ -1,5 +1,7 @@
 package searchengine.services.sitemap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,12 +28,15 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private IndexRepository indexRepository;
     private FlagStop flagStop;
     private LemmaStorage lemmaStorage;
+    private Object lock;
 
+    Connection.Response response;
     private UserAgent userAgent = new UserAgent();
-    private final static Object lock = new Object();
+    private Logger logger = LogManager.getLogger(RecursiveIndexingTask.class);
 
 
-    public RecursiveIndexingTask(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop, LemmaStorage lemmaStorage) {
+
+    public RecursiveIndexingTask(String url, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, FlagStop flagStop, LemmaStorage lemmaStorage, Object lock) {
         this.url = url;
         this.siteEntity = siteEntity;
         this.siteRepository = siteRepository;
@@ -40,6 +45,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
         this.indexRepository = indexRepository;
         this.flagStop = flagStop;
         this.lemmaStorage = lemmaStorage;
+        this.lock = lock;
     }
 
 
@@ -49,41 +55,36 @@ public class RecursiveIndexingTask extends RecursiveAction {
         ArrayList<RecursiveIndexingTask> allTasks = new ArrayList<>();
 
         try {
-            Connection.Response response = Jsoup.connect(url)
+
+            response = Jsoup.connect(url)
                     .userAgent(userAgent.getUSER_AGENT())
                     .referrer(userAgent.getREFERRER())
                     .followRedirects(false).execute();
 
-            if (response.statusCode() == 200) {
-
-                Document doc = response.parse();
-                Elements elements = doc.select("a");
-                elements.forEach(element -> {
-
-                    if (!flagStop.isStopNow()) {
-                        String newURL = element.absUrl("href");
-                        if (isDomainURL(newURL)) {
-                            String uri = getURI(newURL);
-                            synchronized (lock) {
-                                if (!containsInDB(uri)) {
-                                    new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage)
-                                            .indexPage();
-
-                                    System.out.println("save URI: " + uri + " | from thread: " + Thread.currentThread().getName());
-                                    RecursiveIndexingTask task = new RecursiveIndexingTask(newURL, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage);
-                                    task.fork();
-                                    allTasks.add(task);
-                                }
-                            }
+            Document doc = response.parse();
+            Elements elements = doc.select("a");
+            elements.forEach(element -> {
+                //РЕМОНТ-------->
+                String newURL = element.absUrl("href");
+                if (!flagStop.isStopNow() && isDomainURL(newURL)) {
+                    String uri = getURI(newURL);
+                    synchronized (lock) {
+                        if (!containsInDB(uri)) {
+                            new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage)
+                                    .indexPage();
+                            logger.info("URI added: " + uri);
+                            System.out.println("save URI: " + uri + " | from thread: " + Thread.currentThread().getName());
+                            RecursiveIndexingTask task = new RecursiveIndexingTask(newURL, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage, lock);
+                            task.fork();
+                            allTasks.add(task);
                         }
                     }
-                });
-            } else System.out.println("НЕВЕРНЫЙ КОД ОТВЕТА - " + response.statusCode() + " | URL: " + url);
-
-            //В случае ошибки добавлять страницу.
+                }
+            });
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            logger.error("Code response web-page: " + response.statusCode());
         }
         for (RecursiveIndexingTask task : allTasks) {
             task.join();
