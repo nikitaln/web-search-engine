@@ -72,8 +72,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
                         if (!containsInDB(uri)) {
                             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage)
                                     .indexPage();
-                            logger.info("URI added: " + uri);
-                            System.out.println("save URI: " + uri + " | from thread: " + Thread.currentThread().getName());
+                            logger.info("URL added: " + newURL);
                             RecursiveIndexingTask task = new RecursiveIndexingTask(newURL, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage, lock);
                             task.fork();
                             allTasks.add(task);
