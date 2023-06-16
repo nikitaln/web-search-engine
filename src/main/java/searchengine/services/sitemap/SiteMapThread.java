@@ -45,12 +45,7 @@ public class SiteMapThread implements Runnable {
         SiteEntity siteEntity = createSiteEntity(site.getName(), site.getUrl());
         siteRepository.save(siteEntity);
 
-
-        System.out.println("site: " + siteEntity.getNameSite() + " -> DB");
-        System.out.println("thread: " + Thread.currentThread().getName() + " | indexing site: " + siteEntity.getNameSite());
-
-
-        logger.info("Start ForkJoinPool");
+        logger.info("Start indexing site: " + siteEntity.getNameSite());
         //запускаем индексацию при помощи fork-join
         Object lock = new Object();
         recursiveIndexingTask = new RecursiveIndexingTask(site.getUrl(), siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage, lock);

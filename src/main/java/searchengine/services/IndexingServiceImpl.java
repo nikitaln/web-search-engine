@@ -22,9 +22,7 @@ import searchengine.services.sitemap.SiteMapThread;
 import searchengine.services.utils.EditorURL;
 
 import java.time.LocalDateTime;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -95,19 +93,16 @@ public class IndexingServiceImpl implements IndexingService {
 
         logger.info("Start process of stopping sites indexing");
         int countIndexingSite = 0;
+        List<Integer> sitesWithStatusIndexing = new ArrayList<>();
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
 
         while (iterator.hasNext()) {
-
             SiteEntity siteEntity = iterator.next();
             if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
                 countIndexingSite = countIndexingSite + 1;
                 logger.info(siteEntity.getUrl() + " indexing stopped");
                 flagStop.stopRecursiveTask();
-                siteEntity.setStatus(StatusType.FAILED);
-                siteEntity.setTime(LocalDateTime.now());
-                siteEntity.setText("Остановка индексации пользователем");
-                siteRepository.save(siteEntity);
+                sitesWithStatusIndexing.add(siteEntity.getId());
             }
         }
 
@@ -115,7 +110,19 @@ public class IndexingServiceImpl implements IndexingService {
             return new IndexingErrorResponse("Индексация не запущена");
         }
 
-        executorService.shutdown();
+        while (true) {
+            if (executorService.isTerminated()) {
+                executorService.shutdown();
+                for (Integer siteId : sitesWithStatusIndexing) {
+                    SiteEntity siteEntity = siteRepository.findById(siteId).get();
+                    siteEntity.setStatus(StatusType.FAILED);
+                    siteEntity.setTime(LocalDateTime.now());
+                    siteEntity.setText("Остановка индексации пользователем");
+                    siteRepository.save(siteEntity);
+                }
+                break;
+            }
+        }
         logger.info("Process of stopping sites indexing finished");
         return new IndexingResponse();
     }

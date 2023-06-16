@@ -29,8 +29,7 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private FlagStop flagStop;
     private LemmaStorage lemmaStorage;
     private Object lock;
-
-    Connection.Response response;
+    private Connection.Response response;
     private UserAgent userAgent = new UserAgent();
     private Logger logger = LogManager.getLogger(RecursiveIndexingTask.class);
 
