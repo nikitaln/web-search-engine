@@ -126,29 +126,20 @@ GET http://localhost:8080/api/statistics
   "result": true,
   "statistics": {
     "total": {
-      "sites": 2,
-      "pages": 84,
-      "lemmas": 3724,
+      "sites": 1,
+      "pages": 112,
+      "lemmas": 1785,
       "indexing": true
     },
     "detailed": [
       {
-        "url": "https://domotekhnika.ru/",
-        "name": "Domotekhnika.ru",
-        "status": "FAILED",
-        "statusTime": 51,
-        "error": "Остановка индексации пользователем",
-        "pages": 22,
-        "lemmas": 2496
-      },
-      {
         "url": "https://www.playback.ru/",
         "name": "PlayBack.Ru",
         "status": "FAILED",
-        "statusTime": 51,
+        "statusTime": 27,
         "error": "Остановка индексации пользователем",
-        "pages": 62,
-        "lemmas": 1228
+        "pages": 112,
+        "lemmas": 1785
       }
     ]
   }
