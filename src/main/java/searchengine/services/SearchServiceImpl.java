@@ -37,11 +37,8 @@ import java.util.stream.Collectors;
 public class SearchServiceImpl implements SearchService {
 
     private final LemmaRepository lemmaRepository;
-
     private final PageRepository pageRepository;
-
     private final IndexRepository indexRepository;
-
     private final SiteRepository siteRepository;
 
 
@@ -52,7 +49,7 @@ public class SearchServiceImpl implements SearchService {
 
         List<SearchDataResponse> listDataResponse = new ArrayList<>();
 
-        //найти все ИД сайтов
+        //ИД сайтов, в которых встречаются все леммы из запроса
         List<Integer> allSitesId = new ArrayList<>();
 
         Iterator<SiteEntity> iterator = siteRepository.findAll().iterator();
@@ -79,17 +76,19 @@ public class SearchServiceImpl implements SearchService {
         //ищем все леммы по первому сайту
         for (int i = 0; i < allSitesId.size(); i++) {
             int siteId = allSitesId.get(i);
+
             Map<String, Integer> map1 = getMapLemmaFrequencyForSite(query, siteId);
             map1 = ascendingSortByValue(map1);
             List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(map1, siteId);
 
             int j = 1;
             for (Integer pageId : listPagesId) {
-
                 System.out.println(j + ". Страницы на которых есть все леммы: page ID: " + pageId);
                 j = j + 1;
             }
+
             Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, map1, siteId);
+
             List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
             listDataResponse.addAll(list);
         }
@@ -163,20 +162,21 @@ public class SearchServiceImpl implements SearchService {
     private List<SearchDataResponse> getListSearchDataResponse(Map<Integer, Float> map, String query) {
 
         List<SearchDataResponse> list = new ArrayList<>();
+
         for (Integer key : map.keySet()) {
 
             PageEntity pageEntity = pageRepository.findById(key).get();
 
-            SearchDataResponse data = new SearchDataResponse();
-
-            data.setRelevance(map.get(key));
-            data.setUri(pageEntity.getPath());
-            data.setSnippet(searchSnippet(pageEntity.getContent(), query));
-            data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
-            data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
-            data.setSiteName(pageEntity.getSite().getNameSite());
-
-            list.add(data);
+            if (pageContainsQuery(pageEntity.getContent(), query)) {
+                SearchDataResponse data = new SearchDataResponse();
+                data.setRelevance(map.get(key));
+                data.setUri(pageEntity.getPath());
+                data.setSnippet(searchSnippet(pageEntity.getContent(), query));
+                data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
+                data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
+                data.setSiteName(pageEntity.getSite().getNameSite());
+                list.add(data);
+            }
         }
 
         return list;
@@ -203,8 +203,7 @@ public class SearchServiceImpl implements SearchService {
     //получение всех Id страниц на которых содержится данная лемма
     private List<Integer> getAllPagesId(int LemmaId) {
 
-        List<Integer> listPagesId = new ArrayList<>();
-        listPagesId = indexRepository.getAllPagesIdByLemmaId(LemmaId);
+        List<Integer> listPagesId = indexRepository.getAllPagesIdByLemmaId(LemmaId);
 
         return listPagesId;
     }
@@ -403,6 +402,27 @@ public class SearchServiceImpl implements SearchService {
             throw new RuntimeException(e);
         }
 
+        return false;
+    }
+
+    private boolean pageContainsQuery(String html, String query) {
+
+        String regex = "[^.,А-Яа-я\\s]";
+        String htmlWithoutTags = html.replaceAll(regex, "");
+        String queryOnPage = "";
+
+        //поиск целого запроса на данной странице
+        Pattern pattern = Pattern.compile(query);
+        Matcher matcher = pattern.matcher(htmlWithoutTags);
+        while (matcher.find()) {
+            int start = matcher.start();
+            int end = matcher.end();
+            queryOnPage = htmlWithoutTags.substring(start, end);
+        }
+
+        if (query.equals(queryOnPage)) {
+            return true;
+        }
         return false;
     }
 }
