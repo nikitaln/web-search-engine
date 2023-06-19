@@ -28,8 +28,9 @@ public class RecursiveIndexingTask extends RecursiveAction {
     private IndexRepository indexRepository;
     private FlagStop flagStop;
     private LemmaStorage lemmaStorage;
+
+    private Document doc;
     private Object lock;
-    private Connection.Response response;
     private UserAgent userAgent = new UserAgent();
     private Logger logger = LogManager.getLogger(RecursiveIndexingTask.class);
 
@@ -55,23 +56,21 @@ public class RecursiveIndexingTask extends RecursiveAction {
 
         try {
 
-            response = Jsoup.connect(url)
+            doc = Jsoup.connect(url)
                     .userAgent(userAgent.getUSER_AGENT())
                     .referrer(userAgent.getREFERRER())
-                    .followRedirects(false).execute();
+                    .get();
 
-            Document doc = response.parse();
             Elements elements = doc.select("a");
             elements.forEach(element -> {
-                //РЕМОНТ-------->
+
                 String newURL = element.absUrl("href");
                 if (!flagStop.isStopNow() && isDomainURL(newURL)) {
                     String uri = getURI(newURL);
                     synchronized (lock) {
-                        if (!containsInDB(uri)) {
+                        if (!containsInDB(uri, siteEntity.getId())) {
                             new PageIndexing(uri, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, lemmaStorage)
                                     .indexPage();
-                            logger.info("URL added: " + newURL);
                             RecursiveIndexingTask task = new RecursiveIndexingTask(newURL, siteEntity, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop, lemmaStorage, lock);
                             task.fork();
                             allTasks.add(task);
@@ -80,18 +79,18 @@ public class RecursiveIndexingTask extends RecursiveAction {
                 }
             });
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.error("Code response web-page: " + response.statusCode());
+        } catch (Exception e) {
+            logger.error("Error page: " + url);
         }
+
         for (RecursiveIndexingTask task : allTasks) {
             task.join();
         }
     }
 
 
-    private boolean containsInDB(String url) {
-        if (url.equals(pageRepository.contains(url))) {
+    private boolean containsInDB(String url, int siteId) {
+        if (url.equals(pageRepository.contains(url, siteId))) {
             return true;
         } else {
             return false;
@@ -108,13 +107,15 @@ public class RecursiveIndexingTask extends RecursiveAction {
                 && !url.contains("doc")
                 && !url.contains("docx")
                 && !url.contains("*")
-                && !url.contains("pdf")) {
+                && !url.contains("pdf")
+                && !url.contains("PDF")
+                && !url.contains("xlsx")
+                && !url.contains("JPG")) {
             return true;
         } else {
             return false;
         }
     }
-
 
     private String getURI(String url) {
         int countLetters = siteEntity.getUrl().length() - 1;

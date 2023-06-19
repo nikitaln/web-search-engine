@@ -25,7 +25,7 @@ create database search_engine
 **4. Добавление индексируемых сайт(ов)**
 
 + открыть `application.yml`
-+ изменить `indexing-settings:sites: - url:` и `indexing-settings:sites:name:`
++ изменить `indexing-settings:sites:url` и `indexing-settings:sites:name`
 
 
 **5. Запуск приложения**

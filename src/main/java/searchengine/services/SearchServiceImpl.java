@@ -45,8 +45,6 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public SearchTotalResponse searchOnAllSites(String query) {
 
-        System.out.println("search for all sites");
-
         List<SearchDataResponse> listDataResponse = new ArrayList<>();
 
         //ИД сайтов, в которых встречаются все леммы из запроса

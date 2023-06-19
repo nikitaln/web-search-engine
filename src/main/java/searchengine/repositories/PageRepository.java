@@ -24,8 +24,8 @@ import searchengine.model.PageEntity;
 public interface PageRepository extends CrudRepository<PageEntity, Integer> {
 
 
-    @Query(value = "SELECT path FROM page WHERE path LIKE :link", nativeQuery = true)
-    String contains(String link);
+    @Query(value = "SELECT path FROM page WHERE path LIKE :link AND site_id =:siteId", nativeQuery = true)
+    String contains(String link, int siteId);
 
 
     @Query(value = "SELECT id FROM page WHERE path LIKE %:url%", nativeQuery = true)

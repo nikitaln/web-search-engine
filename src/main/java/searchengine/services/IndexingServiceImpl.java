@@ -57,8 +57,8 @@ public class IndexingServiceImpl implements IndexingService {
     public IndexingResponse startIndexing() {
 
         logger.info("Start indexing sites");
-
         flagStop = new FlagStop();
+
         List<Site> sitesList = sites.getSites();
 
         for (int i = 0; i < sitesList.size(); i++) {
@@ -66,16 +66,15 @@ public class IndexingServiceImpl implements IndexingService {
             logger.info("Indexing site with URL: " + site.getUrl());
 
             if (siteContainsInDB(site.getUrl())) {
-                logger.info("Site: "  + site.getUrl() + " contains in database");
+                logger.info("Site URL: "  + site.getUrl() + " contains in database");
                 SiteEntity siteEntity = siteRepository.getByUrl(site.getUrl());
-                logger.info("Check status site");
                 if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
-                    logger.info(site.getUrl() + " site is indexing at that moment");
+                    logger.info("Site URL: " + site.getUrl() + " is indexing at that moment");
                     return new IndexingErrorResponse("Индексация уже запущена");
                 } else {
                     logger.info(site.getUrl() + " site indexed, and will be deleted");
                     siteRepository.delete(siteEntity);
-                    logger.info(site.getUrl() + " deleted");
+                    logger.info(site.getUrl() + " site deleted");
                 }
             }
 
@@ -83,6 +82,7 @@ public class IndexingServiceImpl implements IndexingService {
             siteMapThread = new SiteMapThread(site, siteRepository, pageRepository, lemmaRepository, indexRepository, flagStop);
             logger.info(site.getUrl() + " start indexing in new thread");
             executorService.execute(siteMapThread);
+
             executorService.shutdown();
         }
         return new IndexingResponse();
@@ -140,9 +140,9 @@ public class IndexingServiceImpl implements IndexingService {
             SiteEntity siteEntity = siteRepository.getByUrl(siteUrl);
             String uri = getURIFromURL(url, siteEntity);
 
-            if (pageContainsInDB(uri)) {
+            if (pageContainsInDB(uri, siteEntity.getId())) {
                 logger.info("Page: " + url + " on database");
-                deletePage(uri);
+                deletePage(uri, siteEntity.getId());
                 logger.info("Page: " + url + " deleted and will be index again");
             }
 
@@ -217,9 +217,9 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
 
-    private void deletePage(String url) {
+    private void deletePage(String url, int siteId) {
 
-        if (url.equals(pageRepository.contains(url))) {
+        if (url.equals(pageRepository.contains(url, siteId))) {
             int pageId = pageRepository.getId(url);
             List<Integer> listLemmaId = indexRepository.getAllLemmaId(pageId);
             pageRepository.deleteById(pageId);
@@ -236,9 +236,9 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
 
-    private boolean pageContainsInDB(String url) {
+    private boolean pageContainsInDB(String url, int siteId) {
 
-        if (url.equals(pageRepository.contains(url))) {
+        if (url.equals(pageRepository.contains(url, siteId))) {
             return true;
         } else return false;
     }

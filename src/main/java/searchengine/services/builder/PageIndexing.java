@@ -1,5 +1,7 @@
 package searchengine.services.builder;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.config.LemmaConfiguration;
@@ -13,6 +15,7 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.lemma.LemmaFinder;
 import searchengine.services.sitemap.LemmaStorage;
+import searchengine.services.sitemap.RecursiveIndexingTask;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -28,6 +31,8 @@ public class PageIndexing {
     private LemmaRepository lemmaRepository;
     private IndexRepository indexRepository;
     private LemmaStorage lemmaStorage;
+
+    private Logger logger = LogManager.getLogger(PageIndexing.class);
 
 
     public PageIndexing(String uri, SiteEntity siteEntity, SiteRepository siteRepository, PageRepository pageRepository, LemmaRepository lemmaRepository, IndexRepository indexRepository, LemmaStorage lemmaStorage) {
@@ -48,10 +53,9 @@ public class PageIndexing {
 
         String fullUrl = siteEntity.getUrl() + uri.substring(1);
 
-
         try {
 
-            Document doc2 = Jsoup.connect(fullUrl).get(); // длительность почти секунда
+            Document doc2 = Jsoup.connect(fullUrl).get();
 
             PageEntity pageEntity = new PageEntity();
             pageEntity.setSite(siteEntity);
@@ -59,11 +63,11 @@ public class PageIndexing {
             pageEntity.setContent(doc2.outerHtml());
             pageEntity.setPath(uri);
             pageRepository.save(pageEntity);
-
             saveLemmaAndIndex(doc2.outerHtml(), pageEntity);
+            logger.info("Page added: " + fullUrl);
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            logger.error("Error page: " + fullUrl);
         }
     }
 
