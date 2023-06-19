@@ -44,10 +44,8 @@ public class ApiController {
     @GetMapping("/search")
     public ResponseEntity<SearchTotalResponse> search(String site, String query) {
         if (site != null) {
-            System.out.println("поиск по 1 сайту");
             return ResponseEntity.ok(searchService.searchOnOneSite(site, query));
         } else {
-            System.out.println("поиск по всем сайтам");
             return ResponseEntity.ok(searchService.searchOnAllSites(query));
         }
     }
