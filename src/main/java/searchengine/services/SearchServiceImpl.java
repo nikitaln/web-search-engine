@@ -65,12 +65,6 @@ public class SearchServiceImpl implements SearchService {
             return new SearchErrorResponse("Ничего не найдено по запросу: " + query);
         }
 
-        for (Integer site : allSitesId) {
-
-            System.out.println("сайт где есть все леммы " + site);
-        }
-
-
         //ищем все леммы по первому сайту
         for (int i = 0; i < allSitesId.size(); i++) {
             int siteId = allSitesId.get(i);
@@ -78,12 +72,6 @@ public class SearchServiceImpl implements SearchService {
             Map<String, Integer> map1 = getMapLemmaFrequencyForSite(query, siteId);
             map1 = ascendingSortByValue(map1);
             List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(map1, siteId);
-
-            int j = 1;
-            for (Integer pageId : listPagesId) {
-                System.out.println(j + ". Страницы на которых есть все леммы: page ID: " + pageId);
-                j = j + 1;
-            }
 
             Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, map1, siteId);
 
@@ -109,11 +97,6 @@ public class SearchServiceImpl implements SearchService {
             //создать список страниц, на которых есть все леммы из запроса
             List<Integer> listPagesId = getPagesWithAllLemmasOnOneSite(mapSort, siteId);
 
-            int i = 1;
-            for (Integer pageId : listPagesId) {
-                System.out.println(i + ". Страницы на которых есть все леммы: page ID: " + pageId);
-                i = i + 1;
-            }
             Map<Integer, Float> mapPagesRelevance = countRank(listPagesId, mapSort, siteId);
 
             List<SearchDataResponse> list = getListSearchDataResponse(mapPagesRelevance, query);
@@ -131,7 +114,6 @@ public class SearchServiceImpl implements SearchService {
 
         for (String key : map.keySet()) {
 
-            System.out.println("лемма: " + key + " | частота: " + map.get(key));
             int lemmaId = lemmaRepository.getLemmaIdOnSiteId(key, siteId);
             //добавляем ид страниц в коллекцию
             if (pagesId.size() == 0) {
@@ -165,16 +147,25 @@ public class SearchServiceImpl implements SearchService {
 
             PageEntity pageEntity = pageRepository.findById(key).get();
 
-            if (pageContainsQuery(pageEntity.getContent(), query)) {
-                SearchDataResponse data = new SearchDataResponse();
-                data.setRelevance(map.get(key));
-                data.setUri(pageEntity.getPath());
-                data.setSnippet(searchSnippet(pageEntity.getContent(), query));
-                data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
-                data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
-                data.setSiteName(pageEntity.getSite().getNameSite());
-                list.add(data);
-            }
+            SearchDataResponse data = new SearchDataResponse();
+            data.setRelevance(map.get(key));
+            data.setUri(pageEntity.getPath());
+            data.setSnippet(searchSnippet(pageEntity.getContent(), query));
+            data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
+            data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
+            data.setSiteName(pageEntity.getSite().getNameSite());
+            list.add(data);
+
+//            if (pageContainsQuery(pageEntity.getContent(), query)) {
+//                SearchDataResponse data = new SearchDataResponse();
+//                data.setRelevance(map.get(key));
+//                data.setUri(pageEntity.getPath());
+//                data.setSnippet(searchSnippet(pageEntity.getContent(), query));
+//                data.setTitle(getTitleFromHtmlCode(pageEntity.getContent()));
+//                data.setSite(pageEntity.getSite().getUrl().substring(0, pageEntity.getSite().getUrl().length()-1));
+//                data.setSiteName(pageEntity.getSite().getNameSite());
+//                list.add(data);
+//            }
         }
 
         return list;
@@ -252,10 +243,6 @@ public class SearchServiceImpl implements SearchService {
 
         //сортировка относительной релевантности
         mapRankRel = descendingSortRelevance(mapRankRel);
-
-        for (Integer key : mapRankRel.keySet()) {
-            System.out.println("page ID: " + key + " | Rank rel: " + mapRankRel.get(key));
-        }
 
         return mapRankRel;
     }
@@ -337,8 +324,6 @@ public class SearchServiceImpl implements SearchService {
 
     public String getTitleFromHtmlCode(String html) {
 
-        System.out.println("Зашли в метод");
-
         String regex = "<title>([^<>]+)</title>";
         String citation = "";
 
@@ -392,7 +377,6 @@ public class SearchServiceImpl implements SearchService {
             }
 
             if (countWord == size) {
-                System.out.println("все слова есть");
                 return true;
             }
 
